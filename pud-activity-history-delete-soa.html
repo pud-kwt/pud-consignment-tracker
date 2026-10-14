@@ -1,0 +1,3895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pud Consignment Tracker</title>
+  <style>
+    :root {
+      --bg: #f6fbfb;
+      --card: #ffffff;
+      --ink: #123;
+      --muted: #6b7b83;
+      --brand: #2bb8c6;
+      --brand-dark: #168693;
+      --line: #dbe7e9;
+      --good: #138a5b;
+      --warn: #c27a00;
+      --bad: #b54747;
+      --shadow: 0 10px 30px rgba(22, 134, 147, 0.10);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #eefafa 0%, var(--bg) 240px);
+      color: var(--ink);
+    }
+
+    button, input, select { font: inherit; }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 38px);
+      letter-spacing: -0.04em;
+    }
+
+    .brand p {
+      margin: 5px 0 0;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: 0.15s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .btn-primary {
+      background: var(--brand);
+      color: white;
+    }
+
+    .btn-primary:hover { background: var(--brand-dark); }
+
+    .btn-secondary {
+      background: white;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .btn-danger {
+      background: #fff1f1;
+      color: var(--bad);
+      border: 1px solid #f2cccc;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-card .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+
+    .summary-card .value {
+      font-size: 25px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .search {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 12px;
+      background: white;
+      color: var(--ink);
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(43,184,198,0.13);
+    }
+
+    .retailer-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .retailer-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 17px;
+      box-shadow: var(--shadow);
+    }
+
+    .retailer-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .retailer-name {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .unit-price {
+      color: var(--muted);
+      margin-top: 3px;
+      font-size: 14px;
+    }
+
+    .status {
+      font-size: 12px;
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status.paid { background: #e8f8f0; color: var(--good); }
+    .status.partial { background: #fff7df; color: var(--warn); }
+    .status.unpaid { background: #fff0f0; color: var(--bad); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      background: #f8fbfb;
+      border: 1px solid #e6efef;
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .metric .label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .metric .value {
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .product-list {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .product-card {
+      background: #f8fbfb;
+      border: 1px solid #e1ecee;
+      border-radius: 14px;
+      padding: 13px;
+    }
+
+    .product-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .product-name {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .product-price {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .product-actions .btn {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .edit-line {
+      display: grid;
+      grid-template-columns: 1.4fr .7fr .8fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .checkbox-list {
+      display: grid;
+      gap: 8px;
+      max-height: 260px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: white;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .checkbox-row input {
+      width: auto;
+    }
+
+    .retailer-total {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 46px 18px;
+      background: white;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+    }
+
+    dialog {
+      border: 0;
+      border-radius: 20px;
+      width: min(520px, calc(100vw - 24px));
+      padding: 0;
+      box-shadow: 0 30px 80px rgba(0,0,0,.25);
+    }
+
+    dialog::backdrop {
+      background: rgba(11, 30, 35, 0.55);
+      backdrop-filter: blur(4px);
+    }
+
+    .modal {
+      padding: 22px;
+    }
+
+    .modal h2 {
+      margin: 0 0 6px;
+    }
+
+    .modal p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .history {
+      margin-top: 18px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .history h2 {
+      margin: 0;
+      padding: 16px;
+      font-size: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .history-filters { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:14px 16px 0; }
+    .history-payment-summary { padding:0 16px 12px;color:var(--muted);font-size:13px; }
+    .history-filters .field { margin-bottom:8px; }
+    @media(max-width:650px){.history-filters{grid-template-columns:1fr;gap:0;}}
+    .history-list {
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    .history-row {
+      display: grid;
+      grid-template-columns: 160px 1fr auto;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #edf2f2;
+      font-size: 14px;
+    }
+
+    .history-row:last-child { border-bottom: 0; }
+
+    .history-time { color: var(--muted); }
+    .history-amount { font-weight: 800; }
+
+    .note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.45;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: #102a2d;
+      color: white;
+      padding: 12px 15px;
+      border-radius: 12px;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: .2s ease;
+      z-index: 99;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+
+
+    .low-stock-badge {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #fff0f0;
+      color: var(--bad);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .report-table th, .report-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 9px 7px;
+      text-align: left;
+    }
+
+    .report-table th { color: var(--muted); }
+
+    .modal-wide { width: min(820px, calc(100vw - 24px)); }
+    .scroll-box { max-height: 55vh; overflow: auto; }
+
+    .hidden { display: none !important; }
+
+    .auth-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .auth-card {
+      width: min(430px, 100%);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 25px 70px rgba(22, 134, 147, 0.16);
+    }
+
+    .auth-card h1 {
+      margin: 0 0 6px;
+      font-size: 30px;
+      letter-spacing: -0.04em;
+    }
+
+    .auth-card p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .auth-error {
+      min-height: 20px;
+      margin-top: 12px;
+      color: var(--bad);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 280px;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+      color: var(--muted);
+      font-size: 13px;
+      overflow: hidden;
+    }
+
+    .user-chip span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sync-status {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 9px 2px;
+      min-width: 84px;
+    }
+
+    .sync-status.error { color: var(--bad); }
+    .sync-status.good { color: var(--good); }
+
+    @media (max-width: 850px) {
+      .summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .retailer-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .app { padding: 14px; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .history-row { grid-template-columns: 1fr; gap: 3px; }
+    }
+  
+    .analytics-panel { background:#fff; border:1px solid #dce8eb; border-radius:18px; padding:20px; margin:20px 0; box-shadow:0 8px 24px rgba(17,45,55,.06); }
+    .analytics-head { display:flex; align-items:end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+    .analytics-head h2 { margin:0 0 4px; } .analytics-head p { margin:0; color:#64767d; }
+    .analytics-month { min-width:190px; }
+    .analytics-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
+    .analytics-card { background:#f7fbfc; border:1px solid #dce8eb; border-radius:14px; padding:14px; }
+    .analytics-card .label { color:#667980; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .analytics-card .value { margin-top:7px; font-size:22px; font-weight:800; color:#102c35; }
+    .analytics-table-wrap { overflow:auto; border:1px solid #dce8eb; border-radius:14px; }
+    .analytics-table { width:100%; border-collapse:collapse; min-width:850px; }
+    .analytics-table th,.analytics-table td { padding:11px 12px; border-bottom:1px solid #e6eef0; text-align:right; white-space:nowrap; }
+    .analytics-table th:first-child,.analytics-table td:first-child { text-align:left; }
+    .analytics-table th { background:#eef8fa; color:#29434c; font-size:12px; }
+    .analytics-note { margin-top:10px; color:#6c7d83; font-size:12px; }
+    @media(max-width:900px){.analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+    .margin-badge{display:inline-block;padding:6px 11px;border-radius:999px;font-weight:800;font-size:18px}
+    .margin-green{background:#dcfce7;color:#166534}.margin-yellow{background:#fef3c7;color:#92400e}.margin-red{background:#fee2e2;color:#991b1b}
+    .expense-row{display:grid;grid-template-columns:1.25fr .75fr .75fr .75fr .75fr .75fr auto;gap:8px;align-items:end;margin-bottom:8px}
+    .expense-row .field{margin:0}.expense-remove{height:42px}
+    .expense-help{font-size:13px;color:#718188;line-height:1.45;margin-top:6px}
+    @media(max-width:700px){.expense-row{grid-template-columns:1fr 1fr}.expense-remove{grid-column:2}}
+
+    /* Sidebar navigation */
+    .app{position:relative;padding-left:250px;transition:padding-left .22s ease}
+    .side-nav{position:fixed;left:0;top:0;bottom:0;width:230px;background:#102c35;color:#fff;padding:20px 14px;z-index:50;box-shadow:4px 0 18px rgba(16,44,53,.12);transition:transform .22s ease}
+    .side-nav-brand{font-size:24px;font-weight:900;padding:4px 10px 18px}
+    .side-nav button{width:100%;display:flex;align-items:center;gap:10px;border:0;background:transparent;color:#d9e7ea;padding:11px 12px;border-radius:10px;text-align:left;font-weight:700;cursor:pointer;margin:3px 0}
+    .side-nav button:hover,.side-nav button.active{background:rgba(255,255,255,.12);color:#fff}
+    .side-nav .nav-sep{height:1px;background:rgba(255,255,255,.13);margin:12px 6px}
+    .side-nav-toggle{position:fixed;left:242px;top:18px;z-index:60;border:1px solid #dce8eb;background:#fff;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.08);transition:left .22s ease}
+    .app.nav-collapsed{padding-left:20px}.app.nav-collapsed .side-nav{transform:translateX(-100%)}.app.nav-collapsed .side-nav-toggle{left:14px}
+    .app-page{display:none}.app-page.active{display:block}
+    .topbar .toolbar #invoiceBtn,.topbar .toolbar #soaBtn,.topbar .toolbar #documentsBtn,.topbar .toolbar #reportBtn,.topbar .toolbar #expensesBtn,.topbar .toolbar #addRetailerBtn,.topbar .toolbar #addProductBtn{display:none}
+    @media(max-width:850px){.app{padding-left:20px}.side-nav{transform:translateX(-100%)}.side-nav-toggle{left:14px}.app.nav-open .side-nav{transform:translateX(0)}.app.nav-open .side-nav-toggle{left:242px}}
+</style>
+</head>
+<body>
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-card">
+      <h1>Pud Consignment Tracker</h1>
+      <p>Sign in to access the shared cloud tracker.</p>
+
+      <form id="loginForm">
+        <div class="field">
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" autocomplete="email" required />
+        </div>
+
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" autocomplete="current-password" required />
+        </div>
+
+        <button class="btn btn-primary" id="loginBtn" type="submit" style="width:100%">
+          Sign In
+        </button>
+
+        <div class="auth-error" id="authError"></div>
+      </form>
+    </div>
+  </section>
+
+  <div class="app hidden" id="mainApp">
+    <aside class="side-nav" id="sideNav">
+      <div class="side-nav-brand">PUD</div>
+      <button class="nav-item active" data-page="dashboardPage">Dashboard</button>
+      <button class="nav-item" data-page="retailersPage">Retailers</button>
+      <button class="nav-item" data-page="historyPage">Activity History</button>
+      <div class="nav-sep"></div>
+      <button data-action="addRetailer">+ Add Retailer</button>
+      <button data-action="addProduct">+ Add Product</button>
+      <button data-action="invoice">Create Invoice</button>
+      <button data-action="soa">Create SOA</button>
+      <button data-action="documents">Documents</button>
+        <button type="button" id="backdatedNavBtn">+ Backdated Transaction</button>
+            <button data-action="expenses">Production Cost</button>
+    </aside>
+    <button class="side-nav-toggle" id="sideNavToggle" type="button" aria-label="Toggle menu">☰</button>
+    <div class="topbar">
+      <div class="brand">
+        <h1>Pud Consignment Tracker</h1>
+        <p>Update stock. Record payments. Everything else calculates automatically.</p>
+      </div>
+      <div class="toolbar">
+        <div class="user-chip" title="Signed-in account">
+          <span id="userEmail">Signed in</span>
+        </div>
+        <div class="sync-status" id="syncStatus">Connecting…</div>
+        <button class="btn btn-secondary" id="exportBtn">Export Backup</button>
+        <button class="btn btn-secondary" id="importBtn">Import Backup</button>
+        <button class="btn btn-secondary" id="invoiceBtn">Invoice</button>
+        <button class="btn btn-secondary" id="soaBtn">SOA</button>
+        <button class="btn btn-secondary" id="documentsBtn">Documents</button>
+        <button class="btn btn-secondary" id="reportBtn" style="display:none!important">Reports</button>
+        <button class="btn btn-secondary" id="expensesBtn">Production Cost</button>
+        <button class="btn btn-primary" id="addRetailerBtn">+ Add Retailer</button>
+        <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
+        <button class="btn btn-secondary" id="logoutBtn">Log Out</button>
+        <input type="file" id="importFile" accept=".json" hidden />
+      </div>
+    </div>
+
+    <div class="app-page active" id="dashboardPage">
+    <section class="summary-grid">
+      <div class="summary-card">
+        <div class="label">Retailers</div>
+        <div class="value" id="sumRetailers">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Quantity Sold</div>
+        <div class="value" id="sumSold">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Total Paid</div>
+        <div class="value" id="sumPaid">0.000 KD</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Total Amount Due</div>
+        <div class="value" id="sumUnpaid">0.000 KD</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Products</div>
+        <div class="value" id="sumProducts">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Stock Count Unavailable</div>
+        <div class="value" id="sumLowStock">0</div>
+      </div>
+    </section>
+    <section style="margin-top:18px">
+      <div class="retailer-head" style="margin-bottom:12px">
+        <div>
+          <div class="retailer-name">Retailers</div>
+          <div class="retailer-total">Full retailer information and controls are available directly from the dashboard.</div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="search"><input id="dashboardSearchInput" placeholder="Search retailer..." /></div>
+        <div style="min-width:190px">
+          <select id="dashboardStatusFilter">
+            <option value="all">All retailers</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="partial">Partially paid</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+      </div>
+      <section id="dashboardRetailerGrid" class="retailer-grid"></section>
+    </section>
+    </div>
+
+    <div class="app-page" id="retailersPage">
+    <div class="controls">
+      <div class="search">
+        <input id="searchInput" placeholder="Search retailer..." />
+      </div>
+      <div style="min-width:190px">
+        <select id="statusFilter">
+          <option value="all">All retailers</option>
+          <option value="unpaid">Unpaid</option>
+          <option value="partial">Partially paid</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+    </div>
+
+    <section id="retailerGrid" class="retailer-grid"></section>
+    </div>
+
+    <div class="app-page" id="historyPage">
+    <section class="history">
+      <h2>Activity History</h2>
+      <div class="history-filters">
+        <div class="field"><label for="historyRetailerFilter">Retailer</label><select id="historyRetailerFilter"><option value="">All retailers</option></select></div>
+        <div class="field"><label for="historyTypeFilter">Activity type</label><select id="historyTypeFilter"><option value="all">All activity</option><option value="payment">Recorded payments</option><option value="restock">Added stock</option><option value="return">Returns</option></select></div>
+        <div class="field"><label for="historyPeriodFilter">Period</label><select id="historyPeriodFilter"><option value="6">Last 6 months</option><option value="all">All time</option></select></div>
+      </div>
+      <div id="historyPaymentSummary" class="history-payment-summary" aria-live="polite"></div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+    </div>
+  </div>
+
+  
+  <dialog id="backdatedDialog">
+    <form class="modal" id="backdatedForm">
+      <h2>Enter Missing Transaction</h2>
+      <p>Enter a historical transaction. Choose whether it updates only the SOA or also adjusts live consignment figures.</p>
+      <div class="field"><label for="backdatedDate">Original transaction date</label><input id="backdatedDate" type="date" required /></div>
+      <div class="field"><label for="backdatedRetailer">Retailer</label><select id="backdatedRetailer" required></select></div>
+      <div class="field"><label for="backdatedProduct">Product</label><select id="backdatedProduct" required></select></div>
+      <div class="field"><label for="backdatedType">Transaction type</label><select id="backdatedType"><option value="restock">Add Stock</option><option value="return">Return Goods</option><option value="payment">Record Payment</option></select></div>
+      <div class="field"><label for="backdatedValue">Quantity (stock/return) or cash received (KD)</label><input id="backdatedValue" type="number" min="0.001" step="0.001" required /></div>
+      <div class="field" id="backdatedDiscountField" hidden><label for="backdatedDiscount">Early payment discount (%)</label><input id="backdatedDiscount" type="number" min="0" max="99.999" step="0.001" value="0" /></div>
+      <div class="field"><label for="backdatedInvoiceNumber">Invoice / reference number</label><input id="backdatedInvoiceNumber" maxlength="60" placeholder="Invoice number or payment/return reference" /></div>
+      <div class="field"><label for="backdatedLiveMode">Effect on live consignment</label>
+        <select id="backdatedLiveMode"><option value="soa">SOA only — do not change live balances</option><option value="live">SOA + live consignment — update stock, payments and amount due</option></select>
+      </div>
+      <div class="field"><label for="backdatedNote">Reference / reason</label><input id="backdatedNote" maxlength="100" placeholder="Missing August entry" /></div>
+      <div class="note">Check the date and amount carefully. Previously saved statements are historical snapshots; generate a new SOA to include this correction. SOA-only entries leave live figures unchanged. Live entries adjust them immediately. Undo is available in Activity History. Avoid duplicating an invoice already listed in Documents.</div>
+      <div class="modal-actions"><button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button><button type="submit" class="btn btn-primary">Save Backdated Transaction</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="retailerDialog">
+    <form method="dialog" class="modal" id="retailerForm">
+      <h2 id="retailerDialogTitle">Add Retailer</h2>
+      <p>Create the retailer first. You can then add one or more products with different unit prices.</p>
+      <input type="hidden" id="retailerId" />
+      <div class="field">
+        <label for="retailerName">Retailer name</label>
+        <input id="retailerName" required maxlength="80" />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button class="btn btn-primary" value="default">Save Retailer</button>
+      </div>
+    </form>
+  </dialog>
+
+
+
+  <dialog id="productDialog">
+    <form method="dialog" class="modal" id="productForm">
+      <h2 id="productDialogTitle">Add Product</h2>
+      <p>Add a product to a retailer. Each retailer can have a different unit price for the same product.</p>
+      <input type="hidden" id="productId" />
+      <div class="field">
+        <label for="productRetailerId">Retailer</label>
+        <select id="productRetailerId" required></select>
+      </div>
+      <div class="field">
+        <label for="productName">Product name</label>
+        <input id="productName" required maxlength="80" placeholder="Example: Pud Creamy" />
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="productUnitPrice">Unit price (KD)</label>
+          <input id="productUnitPrice" type="number" min="0.001" step="0.001" required />
+        </div>
+        <div class="field">
+          <label for="productOpeningStock">Opening stock</label>
+          <input id="productOpeningStock" type="number" min="0" step="1" required />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button class="btn btn-primary" value="default">Save Product</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="stockDialog">
+    <form method="dialog" class="modal" id="stockForm">
+      <h2>Add Stock</h2>
+      <p id="stockDescription"></p>
+      <input type="hidden" id="stockRetailerId" />
+      <input type="hidden" id="stockProductId" />
+      <div class="field">
+        <label for="newStock">Quantity to add</label>
+        <input id="newStock" type="number" min="0" step="1" required />
+      </div>
+      <div class="note" id="stockImpactPreview">
+        Enter the number of units delivered. Total Stock Delivered and amount due will increase.
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button class="btn btn-primary" value="default">Add Stock</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="returnDialog">
+    <form method="dialog" class="modal" id="returnForm">
+      <h2>Return Goods</h2>
+      <p id="returnDescription"></p>
+      <input type="hidden" id="returnRetailerId" />
+      <input type="hidden" id="returnProductId" />
+      <div class="field">
+        <label for="returnQuantity">Quantity returned</label>
+        <input id="returnQuantity" type="number" min="1" step="1" required />
+      </div>
+      <div class="note" id="returnImpactPreview">
+        Returns reduce the amount due, but do not erase historical deliveries.
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button class="btn btn-primary" value="default">Return Goods</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="paymentDialog">
+    <form method="dialog" class="modal" id="paymentForm">
+      <h2>Record Payment</h2>
+      <p id="paymentDescription"></p><div class="note" id="paymentPiecesPreview"></div>
+      <input type="hidden" id="paymentRetailerId" />
+      <input type="hidden" id="paymentProductId" />
+      <div class="field">
+        <label for="paymentAmount">Payment received (KD)</label>
+        <input id="paymentAmount" type="number" min="0.001" step="0.001" required />
+      </div>
+      <div class="field">
+        <label for="paymentDiscount">Early payment discount (%)</label>
+        <input id="paymentDiscount" type="number" min="0" max="99.999" step="0.001" value="0" />
+        <div class="note">Applied to the value of units settled, not added to cash received. Enter the actual cash received above.</div>
+      </div>
+      <div class="field">
+        <label for="paymentNote">Reference / note</label>
+        <input id="paymentNote" placeholder="Optional" maxlength="100" />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button class="btn btn-primary" value="default">Record Payment</button>
+      </div>
+    </form>
+  </dialog>
+
+
+
+
+  <dialog id="invoiceDialog" class="modal-wide">
+    <form method="dialog" class="modal" id="invoiceForm">
+      <h2>Generate Invoice</h2>
+      <p>Create a PDF invoice without changing stock or balances.</p>
+      <div class="form-grid">
+        <div class="field"><label for="invoiceRetailer">Retailer</label><select id="invoiceRetailer" required></select></div>
+        <div class="field"><label for="invoiceNumber">Invoice number</label><input id="invoiceNumber" required /></div>
+        <div class="field"><label for="invoiceDate">Invoice date</label><input id="invoiceDate" type="date" required /></div>
+        <div class="field"><label for="invoiceDueDate">Due date</label><input id="invoiceDueDate" type="date" required /></div>
+      </div>
+      <div class="field"><label for="invoiceNotes">Notes</label><input id="invoiceNotes" placeholder="Optional" /></div>
+      <div id="invoiceLines" class="scroll-box"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button class="btn btn-primary" value="default">Download Invoice PDF</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="soaDialog" class="modal-wide">
+    <form method="dialog" class="modal" id="soaForm">
+      <h2>Statement of Account</h2>
+      <p>Generate a PDF summary of product balances and payment activity.</p>
+      <div class="form-grid">
+        <div class="field"><label for="soaRetailer">Retailer</label><select id="soaRetailer" required></select></div>
+        <div class="field"><label for="soaDate">Statement date</label><input id="soaDate" type="date" required /></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button type="button" class="btn btn-secondary" id="soaExcelBtn">Export SOA Excel</button>
+        <button type="button" class="btn btn-primary" id="soaPdfBtn">Download SOA PDF</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="documentsDialog" class="modal-wide">
+    <form method="dialog" class="modal">
+      <h2>Retailer Documents</h2>
+      <p>Invoices and statements are saved in the cloud under each retailer. Open a retailer folder to view or download its documents again.</p>
+      <div class="field">
+        <label for="documentsRetailer">Retailer folder</label>
+        <select id="documentsRetailer"></select>
+      </div>
+      <div id="documentsList" class="scroll-box"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="expensesDialog" class="modal-wide">
+    <form class="modal" id="expensesForm">
+      <h2>Production Cost / Bar</h2>
+      <p>Enter the materials used in one bar to calculate your production cost per bar.</p>
+      <h3>Production materials</h3>
+      <div id="variableExpenseRows"></div>
+      <button type="button" class="btn btn-secondary" id="addVariableExpenseBtn">+ Add material</button>
+      <div class="expense-help">Production materials are used only to calculate cost per bar. Enter the material price per kg, gram, or piece, then enter how much is used in one bar.</div>
+      <div id="unitCostPreview" class="analytics-note" style="margin-top:10px"></div>
+      <div class="modal-actions"><button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button><button type="submit" class="btn btn-primary">Save Production Materials</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="reportDialog" class="modal-wide">
+    <form method="dialog" class="modal">
+      <h2>Monthly Sales & Expense Report</h2>
+      <p>This report uses actual payments collected and actual dated expenses you enter below. Material cost / COGS estimates are not counted as cash expenses here.</p>
+      <div class="form-grid" style="align-items:end">
+        <div class="field"><label for="reportMonth">Report month</label><input id="reportMonth" type="month"></div>
+        <div class="field"><label>&nbsp;</label><button type="button" class="btn btn-secondary" id="refreshReportBtn">Refresh Month</button></div>
+      </div>
+      <h3 style="margin-top:18px">Record actual expense</h3>
+      <div class="form-grid">
+        <div class="field"><label for="cashExpenseDate">Date</label><input id="cashExpenseDate" type="date"></div>
+        <div class="field"><label for="cashExpenseCategory">Category</label><select id="cashExpenseCategory"><option>Chocolate</option><option>Cream</option><option>Wrapper</option><option>Boxes</option><option>Cocoa Butter / Ingredients</option><option>Kitchen Rent</option><option>Salary / Labor</option><option>Delivery</option><option>Marketing</option><option>Utilities</option><option>Equipment</option><option>Other</option></select></div>
+        <div class="field"><label for="cashExpenseDescription">Description</label><input id="cashExpenseDescription" maxlength="100" placeholder="Optional note"></div>
+        <div class="field"><label for="cashExpenseAmount">Amount (KD)</label><input id="cashExpenseAmount" type="number" min="0.001" step="0.001" placeholder="0.000"></div>
+      </div>
+      <button type="button" class="btn btn-primary" id="addCashExpenseBtn">+ Record Expense</button>
+      <div id="reportPreview" class="scroll-box" style="margin-top:18px"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Close</button>
+        <button type="button" class="btn btn-primary" id="excelExportBtn">Export Excel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="editInvoiceDialog">
+    <form class="modal" id="editInvoiceForm">
+      <h2>Edit Saved Invoice</h2>
+      <p>Changes to invoice prices update the invoice and included SOA invoice amounts only. Live stock, payments, returns, and balances stay unchanged.</p>
+      <input type="hidden" id="editInvoiceId" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="editInvoiceNumber">Invoice number</label>
+          <input id="editInvoiceNumber" required maxlength="40" />
+        </div>
+        <div class="field">
+          <label for="editInvoiceDate">Invoice date</label>
+          <input id="editInvoiceDate" type="date" required />
+        </div>
+      </div>
+      <div class="field">
+        <label for="editInvoiceDueDate">Due date</label>
+        <input id="editInvoiceDueDate" type="date" />
+      </div>
+      <div class="field">
+        <label for="editInvoiceNotes">Notes</label>
+        <input id="editInvoiceNotes" maxlength="160" placeholder="Optional" />
+      </div>
+      <div id="editInvoiceLines"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="editStatementDialog">
+    <form class="modal" id="editStatementForm">
+      <h2>Edit Saved SOA</h2>
+      <p>Change the statement date, notes, and which invoices are included.</p>
+      <input type="hidden" id="editStatementId" />
+      <div class="field">
+        <label for="editStatementDate">Statement date</label>
+        <input id="editStatementDate" type="date" required />
+      </div>
+      <div class="field">
+        <label for="editStatementNotes">Notes</label>
+        <input id="editStatementNotes" maxlength="160" placeholder="Optional" />
+      </div>
+      <div class="field">
+        <label>Included invoices</label>
+        <div id="editStatementInvoices"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script>
+    const SUPABASE_URL = "https://bcsrplieygrchwodtxsr.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_X45GJsuN-b7su8Dh1qXcIg_wNjzmESm";
+
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+    const STORAGE_KEY = "pud-consignment-app-v2-products";
+    const LEGACY_STORAGE_KEY = "pud-consignment-app-v1";
+    const CLOUD_ROW_ID = "pud-consignment";
+
+    let state = defaultState();
+    let currentUser = null;
+    let lastCloudUpdatedAt = null;
+    let saveChain = Promise.resolve();
+    let pollTimer = null;
+    let isApplyingCloudState = false;
+
+    function defaultState() {
+      return {
+        retailers: [],
+        history: [],
+        documents: {
+          invoices: [],
+          statements: []
+        },
+        expenses: { variable: [], fixed: [], healthyMargin: 30, moderateMargin: 15 }
+      };
+    }
+
+    function createProductFromLegacyRetailer(r) {
+      return {
+        id: id(),
+        name: r.productName || "Pud Creamy",
+        unitPrice: Number(r.unitPrice) || 0,
+        openingStock: Number(r.openingStock) || 0,
+        currentStock: Number(r.currentStock) || 0,
+        quantitySold: Number(r.quantitySold) || 0,
+        totalRestocked: Number(r.totalRestocked) || 0,
+        totalPaid: Number(r.totalPaid) || 0,
+        unpaid: Number.isFinite(Number(r.unpaid))
+          ? Number(r.unpaid)
+          : 0,
+        createdAt: r.createdAt || new Date().toISOString()
+      };
+    }
+
+    function normalizeProduct(p) {
+      return {
+        id: p.id || id(),
+        name: String(p.name || "Unnamed Product"),
+        unitPrice: Number(p.unitPrice) || 0,
+        openingStock: Number(p.openingStock) || 0,
+        currentStock: Number(p.currentStock) || 0,
+        quantitySold: Number(p.quantitySold) || 0,
+        totalRestocked: Number(p.totalRestocked) || 0,
+        totalPaid: Number(p.totalPaid) || 0,
+        totalDiscount: Number(p.totalDiscount) || 0,
+        unpaid: Number.isFinite(Number(p.unpaid)) ? Number(p.unpaid) : 0,
+        createdAt: p.createdAt || new Date().toISOString()
+      };
+    }
+
+    function normalizeState(value) {
+      const normalized = value && typeof value === "object"
+        ? value
+        : defaultState();
+
+      normalized.retailers = (normalized.retailers || []).map(r => {
+        let products;
+
+        if (Array.isArray(r.products)) {
+          products = r.products.map(normalizeProduct);
+        } else {
+          const hasLegacyData =
+            r.unitPrice !== undefined ||
+            r.currentStock !== undefined ||
+            r.quantitySold !== undefined ||
+            r.totalPaid !== undefined;
+
+          products = hasLegacyData ? [createProductFromLegacyRetailer(r)] : [];
+        }
+
+        return {
+          id: r.id || id(),
+          name: String(r.name || "Unnamed Retailer"),
+          products,
+          undoStack: Array.isArray(r.undoStack) ? r.undoStack : [],
+          redoStack: Array.isArray(r.redoStack) ? r.redoStack : [],
+          redoHistoryIds: Array.isArray(r.redoHistoryIds) ? r.redoHistoryIds : [],
+          createdAt: r.createdAt || new Date().toISOString()
+        };
+      });
+
+      normalized.history = Array.isArray(normalized.history)
+        ? normalized.history
+        : [];
+
+      normalized.documents = normalized.documents && typeof normalized.documents === "object"
+        ? normalized.documents
+        : {};
+      normalized.documents.invoices = Array.isArray(normalized.documents.invoices)
+        ? normalized.documents.invoices
+        : [];
+      normalized.documents.statements = Array.isArray(normalized.documents.statements)
+        ? normalized.documents.statements
+        : [];
+      normalized.expenses = normalized.expenses && typeof normalized.expenses === "object" ? normalized.expenses : {};
+      normalized.expenses.variable = Array.isArray(normalized.expenses.variable) ? normalized.expenses.variable : [];
+      normalized.expenses.fixed = Array.isArray(normalized.expenses.fixed) ? normalized.expenses.fixed : [];
+      normalized.expenses.healthyMargin = Number.isFinite(Number(normalized.expenses.healthyMargin)) ? Number(normalized.expenses.healthyMargin) : 30;
+      normalized.expenses.moderateMargin = Number.isFinite(Number(normalized.expenses.moderateMargin)) ? Number(normalized.expenses.moderateMargin) : 15;
+      normalized.cashExpenses = Array.isArray(normalized.cashExpenses) ? normalized.cashExpenses : [];
+
+      return normalized;
+    }
+
+    const els = {
+      grid: document.getElementById("retailerGrid"),
+      history: document.getElementById("historyList"),
+      search: document.getElementById("searchInput"),
+      filter: document.getElementById("statusFilter"),
+      retailerDialog: document.getElementById("retailerDialog"),
+      productDialog: document.getElementById("productDialog"),
+      stockDialog: document.getElementById("stockDialog"),
+      returnDialog: document.getElementById("returnDialog"),
+      paymentDialog: document.getElementById("paymentDialog"),
+      toast: document.getElementById("toast"),
+      authScreen: document.getElementById("authScreen"),
+      mainApp: document.getElementById("mainApp"),
+      loginForm: document.getElementById("loginForm"),
+      loginEmail: document.getElementById("loginEmail"),
+      loginPassword: document.getElementById("loginPassword"),
+      loginBtn: document.getElementById("loginBtn"),
+      authError: document.getElementById("authError"),
+      userEmail: document.getElementById("userEmail"),
+      syncStatus: document.getElementById("syncStatus")
+    };
+
+    function loadLocalBackup() {
+      const possibleKeys = [STORAGE_KEY, LEGACY_STORAGE_KEY];
+
+      for (const key of possibleKeys) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) return normalizeState(JSON.parse(raw));
+        } catch (error) {
+          console.error("Local backup load failed:", error);
+        }
+      }
+
+      return defaultState();
+    }
+
+    function setSyncStatus(message, type = "") {
+      els.syncStatus.textContent = message;
+      els.syncStatus.className = `sync-status ${type}`.trim();
+    }
+
+    async function loadCloudState({ allowMigration = true, silent = false } = {}) {
+      if (!currentUser) return;
+
+      if (!silent) setSyncStatus("Loading…");
+
+      const { data, error } = await supabaseClient
+        .from("app_state")
+        .select("data, updated_at")
+        .eq("id", CLOUD_ROW_ID)
+        .single();
+
+      if (error) {
+        setSyncStatus("Load failed", "error");
+        throw error;
+      }
+
+      const rawCloudState = data?.data || defaultState();
+      const cloudState = normalizeState(rawCloudState);
+      const localState = loadLocalBackup();
+
+      const cloudIsEmpty =
+        cloudState.retailers.length === 0 &&
+        cloudState.history.length === 0 &&
+        cloudState.documents.invoices.length === 0 &&
+        cloudState.documents.statements.length === 0;
+
+      const localHasData =
+        localState.retailers.length > 0 ||
+        localState.history.length > 0 ||
+        localState.documents.invoices.length > 0 ||
+        localState.documents.statements.length > 0;
+
+      if (allowMigration && cloudIsEmpty && localHasData) {
+        state = localState;
+        render();
+        await saveCloudState();
+        showToast("Existing browser data moved to the cloud");
+        return;
+      }
+
+      isApplyingCloudState = true;
+      state = cloudState;
+      lastCloudUpdatedAt = data?.updated_at || null;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      render();
+      isApplyingCloudState = false;
+
+      const cloudNeededMigration = (rawCloudState.retailers || []).some(
+        r => !Array.isArray(r.products)
+      );
+
+      if (cloudNeededMigration) {
+        await saveCloudState();
+        showToast("Existing retailers converted to multiple products");
+      } else {
+        setSyncStatus("Cloud synced", "good");
+      }
+    }
+
+    async function saveCloudState() {
+      if (!currentUser || isApplyingCloudState) return;
+
+      const snapshot = JSON.parse(JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+      setSyncStatus("Saving…");
+
+      const { data, error } = await supabaseClient
+        .from("app_state")
+        .update({
+          data: snapshot,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", CLOUD_ROW_ID)
+        .select("updated_at")
+        .single();
+
+      if (error) {
+        setSyncStatus("Save failed", "error");
+        showToast("Cloud save failed — local backup kept");
+        throw error;
+      }
+
+      lastCloudUpdatedAt = data?.updated_at || lastCloudUpdatedAt;
+      setSyncStatus("Saved", "good");
+    }
+
+    function saveState() {
+      // Persist to the browser IMMEDIATELY before any async cloud work.
+      // This prevents newly generated invoices/SOAs from disappearing if the
+      // page is refreshed while the Supabase request is still in flight.
+      const snapshot = JSON.parse(JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+      render();
+
+      saveChain = saveChain
+        .then(() => saveCloudState())
+        .catch(error => {
+          console.error("Cloud save error:", error);
+          // Browser copy is already safe; keep the UI usable and retry on next save.
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        });
+
+      return saveChain;
+    }
+
+    window.addEventListener("pagehide", () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (error) {
+        console.error("Final local save failed:", error);
+      }
+    });
+
+    async function checkForCloudUpdates() {
+      if (!currentUser || document.hidden) return;
+
+      const { data, error } = await supabaseClient
+        .from("app_state")
+        .select("updated_at")
+        .eq("id", CLOUD_ROW_ID)
+        .single();
+
+      if (error || !data?.updated_at) return;
+
+      if (lastCloudUpdatedAt && data.updated_at !== lastCloudUpdatedAt) {
+        await saveChain;
+        await loadCloudState({ allowMigration: false, silent: true });
+        showToast("Cloud changes loaded");
+      }
+    }
+
+    function id() {
+      return crypto.randomUUID
+        ? crypto.randomUUID()
+        : String(Date.now() + Math.random());
+    }
+
+    function money(n) {
+      return `${Number(n || 0).toFixed(3)} KD`;
+    }
+
+    function formatInvoiceNumber(sequence) {
+      return `INV-${String(sequence).padStart(5, "0")}`;
+    }
+
+    function getNextInvoiceNumber() {
+      state.documents = state.documents || { invoices: [], statements: [], nextInvoiceSequence: 1 };
+      const sequence = Math.max(1, Number(state.documents.nextInvoiceSequence) || 1);
+      return formatInvoiceNumber(sequence);
+    }
+
+    function reserveNextInvoiceNumber() {
+      const invoiceNumber = getNextInvoiceNumber();
+      state.documents.nextInvoiceSequence =
+        Math.max(1, Number(state.documents.nextInvoiceSequence) || 1) + 1;
+      return invoiceNumber;
+    }
+
+    function invoiceNumberExists(invoiceNumber, excludeInvoiceId = "") {
+      const normalized = String(invoiceNumber || "").trim().toLowerCase();
+      return state.documents.invoices.some(invoice =>
+        invoice.id !== excludeInvoiceId &&
+        String(invoice.invoiceNumber || "").trim().toLowerCase() === normalized
+      );
+    }
+
+    function getRetailer(retailerId) {
+      return state.retailers.find(r => r.id === retailerId);
+    }
+
+    function getProduct(retailer, productId) {
+      return retailer?.products.find(p => p.id === productId);
+    }
+
+    function totalDelivered(p) { return (Number(p.openingStock) || 0) + (Number(p.totalRestocked) || 0); }
+
+    function retailerTotals(r) {
+      return r.products.reduce((totals, product) => {
+        totals.stock += Number(product.currentStock) || 0;
+        totals.sold += Number(product.quantitySold) || 0;
+        totals.paid += Number(product.totalPaid) || 0;
+        totals.unpaid += Math.max(Number(product.unpaid) || 0, 0);
+        totals.restocked += Number(product.totalRestocked) || 0;
+        return totals;
+      }, {
+        stock: 0,
+        sold: 0,
+        paid: 0,
+        unpaid: 0,
+        restocked: 0
+      });
+    }
+
+    // Canteen was already reconciled in the 2026-10-13 backup.
+    // No one-time reconciliation action is exposed: future changes must be
+    // ordinary auditable stock, payment or return transactions.
+    // Confirmed baseline: 179.677 KD due, 392 units on hand, 1480 sold.
+
+    function retailerStatus(r) {
+      const totals = retailerTotals(r);
+      if (totals.unpaid <= 0.0005) return "paid";
+      if (totals.paid > 0) return "partial";
+      return "unpaid";
+    }
+
+    function statusLabel(status) {
+      return status === "paid"
+        ? "Paid"
+        : status === "partial"
+          ? "Partially Paid"
+          : "Unpaid";
+    }
+
+    function addHistory(type, retailerName, message, amount = "", details = null) {
+      const historyRecord = {
+        id: id(),
+        type,
+        retailerName,
+        message,
+        amount,
+        details,
+        undone: false,
+        at: new Date().toISOString(),
+        // Store the month from the user's local calendar at the exact moment
+        // the transaction is recorded. This prevents UTC from moving a
+        // late-night Kuwait transaction into the previous month.
+        localMonth: (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        })()
+      };
+      state.history.unshift(historyRecord);
+
+      state.history = state.history.slice(0, 10000);
+      return historyRecord;
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      setTimeout(() => els.toast.classList.remove("show"), 2200);
+    }
+
+    function snapshotRetailer(r) {
+      return {
+        name: r.name,
+        products: JSON.parse(JSON.stringify(r.products))
+      };
+    }
+
+    function pushUndo(r) {
+      r.undoStack = Array.isArray(r.undoStack) ? r.undoStack : [];
+      r.redoStack = [];
+      r.redoHistoryIds = [];
+      r.undoStack.push(snapshotRetailer(r));
+
+      if (r.undoStack.length > 50) r.undoStack.shift();
+    }
+
+    function applySnapshot(r, snapshot) {
+      r.name = snapshot.name;
+      r.products = JSON.parse(JSON.stringify(snapshot.products || []));
+    }
+
+    function render() {
+      renderSummary();
+      renderRetailers();
+      renderHistory();
+      populateRetailerSelect();
+    }
+
+    function historyNumericAmount(h) {
+      if (h?.details && Number.isFinite(Number(h.details.value))) return Number(h.details.value);
+      return Number(String(h?.amount || "").replace(/[^0-9.-]/g, "")) || 0;
+    }
+
+    function historyQuantity(h) {
+      if (h?.details && Number.isFinite(Number(h.details.quantity))) return Number(h.details.quantity);
+      const m = String(h?.message || "").match(/(?:^|:\s*)(\d+)\s+units?/i) || String(h?.message || "").match(/:\s*(\d+)\s+units?\s+sold/i);
+      return m ? Number(m[1]) : 0;
+    }
+
+    function renderMonthlyAnalytics() {
+      const monthInput = document.getElementById("analyticsMonth");
+      if (!monthInput) return;
+      if (!monthInput.value) monthInput.value = new Date().toISOString().slice(0,7);
+      const month = monthInput.value;
+      const transactionMonth = h => {
+        // New transactions carry an explicit localMonth captured when the
+        // user clicked Add Stock / Return / Record Payment.
+        if (/^\d{4}-\d{2}$/.test(String(h?.localMonth || ""))) return h.localMonth;
+
+        // Backward-compatible fallback for older history records: interpret
+        // the saved timestamp in the browser's local calendar instead of
+        // slicing the UTC ISO string.
+        const d = new Date(h?.at || "");
+        if (!Number.isNaN(d.getTime())) {
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        }
+        return "";
+      };
+      const rows = (state.history || []).filter(h => !h.undone && transactionMonth(h) === month && ["restock","return","payment"].includes(h.type));
+
+      // Build one reconciled monthly activity set. A retailer is included if it
+      // had ANY selected-month transaction (delivery, return, or payment).
+      // This guarantees that the retailer table and headline cards use the
+      // exact same underlying transaction set.
+      const allActivityMap = new Map();
+      const getActivityRow = name => { if (!allActivityMap.has(name)) allActivityMap.set(name,{name,stock:0,delivered:0,payments:0,returns:0,returnValue:0}); return allActivityMap.get(name); };
+      rows.forEach(h => {
+        const r=getActivityRow(h.retailerName || "Unknown Retailer"), value=historyNumericAmount(h), qty=historyQuantity(h);
+        if(h.type==="restock"){r.stock+=qty;r.delivered+=value;}
+        if(h.type==="return"){r.returns+=qty;r.returnValue+=value;}
+        if(h.type==="payment"){r.payments+=value;}
+      });
+      const allActivity=[...allActivityMap.values()];
+      const all=[...allActivityMap.values()].sort((a,b)=>a.name.localeCompare(b.name));
+      const totals=all.reduce((t,r)=>({stock:t.stock+r.stock,delivered:t.delivered+r.delivered,payments:t.payments+r.payments,returns:t.returns+r.returns,returnValue:t.returnValue+r.returnValue}),{stock:0,delivered:0,payments:0,returns:0,returnValue:0});
+      const unpaid=totals.delivered-totals.returnValue-totals.payments;
+      const soldUnits = rows.filter(h=>h.type==="payment").reduce((sum,h)=>sum+historyQuantity(h),0);
+      const variablePerUnit = (state.expenses?.variable || []).reduce((sum,e)=>sum+materialCostPerBar(e),0);
+      const fixedMonthly = (state.expenses?.fixed || []).reduce((sum,e)=>sum+(Number(e.amount)||0),0);
+      // In the current data model, Record Payment is also the event that stores
+      // sold quantity/value, so recorded sales revenue and cash collected are
+      // the same number. They should be split into separate Sale and Payment
+      // transactions in a future data-model upgrade if payments can settle
+      // receivables from earlier months.
+      const revenue = totals.payments;
+      const cogs = soldUnits * variablePerUnit;
+      const grossProfit = revenue - cogs;
+      const totalCosts = cogs + fixedMonthly;
+      const profit = grossProfit - fixedMonthly;
+      const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+      const healthy = Number(state.expenses?.healthyMargin ?? 30), moderate = Number(state.expenses?.moderateMargin ?? 15);
+      const marginClass = margin >= healthy ? "margin-green" : margin >= moderate ? "margin-yellow" : "margin-red";
+      document.getElementById("anStock").textContent=`${totals.stock} units`;
+      document.getElementById("anDeliveredValue").textContent=money(totals.delivered);
+      document.getElementById("anPayments").textContent=money(totals.payments);
+      document.getElementById("anReturns").textContent=`${totals.returns} units`;
+      document.getElementById("anUnpaid").textContent=money(unpaid);
+      document.getElementById("anRevenue").textContent=money(revenue);
+      document.getElementById("anSoldUnits").textContent=`${soldUnits} units`;
+      document.getElementById("anUnitCost").textContent=money(variablePerUnit);
+      document.getElementById("anCogs").textContent=money(cogs);
+      document.getElementById("anGrossProfit").textContent=money(grossProfit);
+      document.getElementById("anFixedCosts").textContent=money(fixedMonthly);
+      document.getElementById("anTotalCosts").textContent=money(totalCosts);
+      document.getElementById("anProfit").textContent=money(profit);
+      document.getElementById("anMargin").innerHTML=`<span class="margin-badge ${marginClass}">${margin.toFixed(1)}%</span>`;
+      document.getElementById("analyticsRetailers").innerHTML=all.length?all.map(r=>`<tr><td>${escapeHtml(r.name)}</td><td>${r.stock}</td><td>${money(r.delivered)}</td><td>${money(r.payments)}</td><td>${r.returns}</td><td>${money(r.returnValue)}</td><td>${money(r.delivered-r.returnValue-r.payments)}</td></tr>`).join(""):`<tr><td colspan="7" style="text-align:center;color:#718188;padding:24px">No delivery, return, or payment activity was recorded for this month.</td></tr>`;
+    }
+
+    function renderSummary() {
+      const totals = state.retailers.reduce((all, retailer) => {
+        const retailerTotal = retailerTotals(retailer);
+        all.sold += retailerTotal.sold;
+        all.paid += retailerTotal.paid;
+        all.unpaid += retailerTotal.unpaid;
+        return all;
+      }, { sold: 0, paid: 0, unpaid: 0 });
+
+      document.getElementById("sumRetailers").textContent =
+        state.retailers.length;
+
+      document.getElementById("sumSold").textContent =
+        totals.sold;
+
+      document.getElementById("sumPaid").textContent =
+        money(totals.paid);
+
+      document.getElementById("sumUnpaid").textContent =
+        money(totals.unpaid);
+
+      const products = state.retailers.flatMap(r => r.products);
+      document.getElementById("sumProducts").textContent = products.length;
+      document.getElementById("sumLowStock").textContent = "—";
+    }
+
+    function renderRetailers() {
+      const query = els.search.value.trim().toLowerCase();
+      const filter = els.filter.value;
+
+      const retailers = state.retailers
+        .filter(r => {
+          const retailerMatches = r.name.toLowerCase().includes(query);
+          const productMatches = r.products.some(
+            p => p.name.toLowerCase().includes(query)
+          );
+          return retailerMatches || productMatches;
+        })
+        .filter(r => filter === "all" || retailerStatus(r) === filter)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      if (!retailers.length) {
+        els.grid.innerHTML =
+          `<div class="empty">No retailers found. Add your first retailer to begin.</div>`;
+        return;
+      }
+
+      els.grid.innerHTML = retailers.map(r => {
+        const totals = retailerTotals(r);
+        const status = retailerStatus(r);
+
+        const productsHtml = r.products.length
+          ? r.products
+              .slice()
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map(product => `
+                <div class="product-card">
+                  <div class="product-head">
+                    <div>
+                      <div class="product-name">${escapeHtml(product.name)}</div>
+                      <div class="product-price">Unit price: ${money(product.unitPrice)}</div>
+                      
+                    </div>
+                  </div>
+
+                  <div class="metrics">
+                    <div class="metric">
+                      <div class="label">Total Stock Delivered</div>
+                      <div class="value">${totalDelivered(product)}</div>
+                    </div>
+                    <div class="metric">
+                      <div class="label">Quantity Sold</div>
+                      <div class="value">${product.quantitySold}</div>
+                    </div>
+                    <div class="metric">
+                      <div class="label">Restocked</div>
+                      <div class="value">${product.totalRestocked}</div>
+                    </div>
+                    <div class="metric">
+                      <div class="label">Total Paid</div>
+                      <div class="value">${money(product.totalPaid)}</div>
+                    </div>
+                    <div class="metric">
+                      <div class="label">Total Amount Due</div>
+                      <div class="value">${money(Math.max(product.unpaid || 0, 0))}</div>
+                    </div>
+                  </div>
+
+                  <div class="product-actions">
+                    <button class="btn btn-primary" onclick="openStock('${r.id}', '${product.id}')">Add Stock</button>
+                    <button class="btn btn-secondary" onclick="openReturn('${r.id}', '${product.id}')">Return Goods</button>
+                    <button class="btn btn-secondary" onclick="openPayment('${r.id}', '${product.id}')">Record Payment</button>
+                    <button class="btn btn-secondary" onclick="editProduct('${r.id}', '${product.id}')">Edit Product</button>
+                    <button class="btn btn-danger" onclick="deleteProduct('${r.id}', '${product.id}')">Delete Product</button>
+                  </div>
+                </div>
+              `).join("")
+          : `<div class="empty" style="padding:22px 12px;">No products yet. Add a product to this retailer.</div>`;
+
+        return `
+          <article class="retailer-card">
+            <div class="retailer-head">
+              <div>
+                <div class="retailer-name">${escapeHtml(r.name)}</div>
+                <div class="retailer-total">
+                  ${r.products.length} product${r.products.length === 1 ? "" : "s"} ·
+                  Stock ${totals.stock} ·
+                  Unpaid ${money(totals.unpaid)}
+                </div>
+              </div>
+              <span class="status ${status}">${statusLabel(status)}</span>
+            </div>
+
+            <div class="product-list">${productsHtml}</div>
+
+            <div class="card-actions">
+              <button class="btn btn-primary" onclick="openAddProduct('${r.id}')">+ Add Product</button>
+              <button class="btn btn-secondary" onclick="undoRetailer('${r.id}')">Undo</button>
+              <button class="btn btn-secondary" onclick="redoRetailer('${r.id}')">Redo</button>
+              <button class="btn btn-secondary" onclick="editRetailer('${r.id}')">Edit Retailer</button>
+              <button class="btn btn-danger" onclick="deleteRetailer('${r.id}')">Delete Retailer</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      const dashboardGrid = document.getElementById("dashboardRetailerGrid");
+      if (dashboardGrid) dashboardGrid.innerHTML = els.grid.innerHTML;
+    }
+
+    // Signed adjustments for backdated transactions. Kept separate from ordinary retailer undo stacks.
+    function backdatedLiveDelta(type, d) {
+      const qty = Number(d.quantity) || 0;
+      const gross = Number(d.settledAmount ?? d.value) || 0;
+      const cash = Number(d.cashReceived ?? d.value) || 0;
+      const discount = Number(d.discountAmount) || 0;
+      if (type === "restock") return {stock:qty, restocked:qty, sold:0, paid:0, discount:0, due:Number(d.value)||0, returned:0};
+      if (type === "return") return {stock:-qty, restocked:0, sold:0, paid:0, discount:0, due:-(Number(d.value)||0), returned:qty};
+      return {stock:0, restocked:0, sold:0, paid:cash, discount, due:-gross, returned:0};
+    }
+    function canApplyBackdatedDelta(p, delta) {
+      const epsilon = 0.001;
+      return Number(p.currentStock || 0) + delta.stock >= -epsilon &&
+        Number(p.unpaid || 0) + delta.due >= -epsilon &&
+        Number(p.quantitySold || 0) + delta.sold >= -epsilon &&
+        Number(p.totalPaid || 0) + delta.paid >= -epsilon &&
+        Number(p.totalRestocked || 0) + delta.restocked >= -epsilon &&
+        Number(p.totalReturned || 0) + delta.returned >= -epsilon &&
+        Number(p.totalDiscount || 0) + delta.discount >= -epsilon;
+    }
+    function applyBackdatedDelta(p, d) {
+      for (const [key, field] of [["stock","currentStock"],["restocked","totalRestocked"],["sold","quantitySold"],["paid","totalPaid"],["discount","totalDiscount"],["due","unpaid"],["returned","totalReturned"]]) {
+        p[field] = Number((Number(p[field] || 0) + d[key]).toFixed(3));
+      }
+    }
+    window.toggleBackdatedUndo = function(historyId) {
+      const h = state.history.find(x => x.id === historyId && x.backdated);
+      if (!h) return;
+      const r = getRetailer(h.retailerId);
+      const p = getProduct(r, h.details?.productId);
+      const undo = !h.undone;
+      if (h.affectsLive) {
+        if (!p) return alert("Product no longer exists; cannot safely reverse the live adjustment.");
+        const base = backdatedLiveDelta(h.type, h.details || {});
+        const delta = Object.fromEntries(Object.entries(base).map(([k,v]) => [k, undo ? -v : v]));
+        if (!canApplyBackdatedDelta(p, delta)) return alert("Cannot reverse this transaction safely: current stock or balances would become negative. Reconcile later transactions first.");
+        if (!confirm(`${undo ? "Undo" : "Redo"} this backdated transaction? This will also ${undo ? "reverse" : "reapply"} its live consignment adjustment.`)) return;
+        applyBackdatedDelta(p, delta);
+      } else if (!confirm(`${undo ? "Undo" : "Redo"} this SOA-only historical entry?`)) return;
+      h.undone = undo;
+      saveState();
+      showToast(undo ? "Backdated transaction undone" : "Backdated transaction restored");
+    };
+    // Backdated entries use the existing retailer snapshots and cloud save pipeline.
+    function openBackdatedDialog() {
+      const rs = document.getElementById("backdatedRetailer");
+      rs.innerHTML = state.retailers.map(r => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.name)}</option>`).join("");
+      document.getElementById("backdatedDate").value = new Date().toLocaleDateString("en-CA");
+      document.getElementById("backdatedForm").reset();
+      document.getElementById("backdatedDate").value = new Date().toLocaleDateString("en-CA");
+      refreshBackdatedProducts();
+      refreshBackdatedType();
+      document.getElementById("backdatedDialog").showModal();
+    }
+    function refreshBackdatedProducts() {
+      const r = getRetailer(document.getElementById("backdatedRetailer").value);
+      document.getElementById("backdatedProduct").innerHTML = (r?.products || []).map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join("");
+    }
+    function refreshBackdatedType() {
+      document.getElementById("backdatedDiscountField").hidden = document.getElementById("backdatedType").value !== "payment";
+    }
+    document.getElementById("backdatedNavBtn").addEventListener("click", openBackdatedDialog);
+    document.getElementById("backdatedRetailer").addEventListener("change", refreshBackdatedProducts);
+    document.getElementById("backdatedType").addEventListener("change", refreshBackdatedType);
+    document.getElementById("backdatedForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const date = document.getElementById("backdatedDate").value;
+      const r = getRetailer(document.getElementById("backdatedRetailer").value);
+      const p = getProduct(r, document.getElementById("backdatedProduct").value);
+      const type = document.getElementById("backdatedType").value;
+      const value = Number(document.getElementById("backdatedValue").value);
+      const rate = Number(document.getElementById("backdatedDiscount").value || 0);
+      const note = document.getElementById("backdatedNote").value.trim();
+      const affectLive = document.getElementById("backdatedLiveMode").value === "live";
+      if (!r || !p || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || date > new Date().toLocaleDateString("en-CA") || !(value > 0)) { alert("Check the retailer, date and amount."); return; }
+      const price = Number(p.unitPrice) || 0;
+      if (!(price > 0)) { alert("Product needs a valid unit price."); return; }
+      let qty = 0, amount = 0, details = {}, message = "";
+      if (type === "restock" || type === "return") {
+        if (!Number.isInteger(value)) { alert("Stock quantities must be whole units."); return; }
+        qty = value; amount = Number((qty * price).toFixed(3));
+        // Historical SOA-only entries do not validate against today's stock or outstanding balance.
+        details = {productId:p.id,productName:p.name,quantity:qty,unitPrice:price,value:amount};
+        message = `${p.name}: ${qty} units ${type === "restock" ? "added" : "returned"} (backdated ${date})${note ? " — " + note : ""}`;
+      } else {
+        if (!(rate >= 0 && rate < 100)) { alert("Discount must be between 0 and below 100%."); return; }
+        const gross = Number((value / (1 - rate / 100)).toFixed(3));
+        const discount = Number((gross - value).toFixed(3));
+        qty = Math.round(gross / price);
+        if (qty < 1) { alert("Payment must represent at least one unit."); return; }
+        if (Math.abs(gross / price - qty) > .01 && !confirm(`Payment represents ${(gross / price).toFixed(2)} units; round to ${qty} units?`)) return;
+        amount = value;
+        details = {productId:p.id,productName:p.name,quantity:qty,unitPrice:price,value, cashReceived:value, discountPercent:rate,discountAmount:discount,settledAmount:gross,note};
+        message = `${p.name}: ${qty} units sold; cash received ${money(value)}${discount ? `; discount ${rate}% (${money(discount)})` : ""} (backdated ${date})${note ? " — " + note : ""}`;
+      }
+      const reference = document.getElementById("backdatedInvoiceNumber").value.trim();
+      if (reference && type === "restock" && state.documents.invoices.some(inv =>
+        inv.retailerId === r.id && String(inv.invoiceNumber || "").trim().toLowerCase() === reference.toLowerCase())) {
+        alert("This invoice number already exists in saved invoices for this retailer. Do not register it twice."); return;
+      }
+      if (reference && state.history.some(h => h.backdated && !h.undone && h.retailerId === r.id &&
+        h.type === type && String(h.soaReference || "").toLowerCase() === reference.toLowerCase())) {
+        alert("This reference already exists for this retailer and transaction type."); return;
+      }
+      const change = backdatedLiveDelta(type, details);
+      if (affectLive && !canApplyBackdatedDelta(p, change)) {
+        alert("This entry cannot be applied to live consignment: insufficient stock or outstanding balance. Choose SOA only, or review the amount."); return;
+      }
+      if (!confirm(`Register ${type} dated ${date} for ${r.name} / ${p.name}? Mode: ${affectLive ? "SOA + LIVE CONSIGNMENT (changes current totals)" : "SOA ONLY (no live changes)"}.`)) return;
+      if (affectLive) applyBackdatedDelta(p, change);
+      const h = addHistory(type,r.name,message,money(amount),details);
+      h.effectiveDate = date;
+      h.retailerId = r.id;
+      h.backdated = true;
+      h.soaOnly = !affectLive;
+      h.affectsLive = affectLive;
+      h.soaReference = reference;
+      h.localMonth = date.slice(0,7);
+      document.getElementById("backdatedDialog").close();
+      saveState();
+      showToast(affectLive ? "Historical entry saved; live consignment updated" : "SOA-only historical entry saved; live balances unchanged");
+    });
+
+    // Void a single transaction without erasing its audit trail. Reverses the
+    // exact live monetary/quantity effects; regenerated SOAs exclude it.
+    window.deleteHistoryTransaction = function(historyId) {
+      const h = state.history.find(x => x.id === historyId);
+      if (!h || h.undone || !["restock", "payment", "return"].includes(h.type)) return;
+      if (h.backdated) {
+        // Reuse the existing guarded backdated reversal, which also handles SOA-only entries.
+        toggleBackdatedUndo(historyId);
+        return;
+      }
+      const r = state.retailers.find(x => x.id === h.retailerId) ||
+        state.retailers.find(x => x.name === h.retailerName);
+      const p = r?.products.find(x => x.id === h.details?.productId);
+      if (!p || !h.details || !Number.isFinite(Number(h.details.value))) {
+        alert("Cannot safely reverse this legacy transaction because its original product or amount is missing."); return;
+      }
+      const qty = Number(h.details.quantity) || 0;
+      const value = Number(h.details.value) || 0;
+      const cash = Number(h.details.cashReceived ?? value) || 0;
+      const discount = Number(h.details.discountAmount) || 0;
+      const gross = Number(h.details.settledAmount ?? (cash + discount)) || 0;
+      const d = h.type === "restock"
+        ? {stock:-qty,restocked:-qty,sold:0,paid:0,discount:0,due:-value,returned:0}
+        : h.type === "return"
+        ? {stock:qty,restocked:0,sold:0,paid:0,discount:0,due:value,returned:-qty}
+        : {stock:0,restocked:0,sold:0,paid:-cash,discount:-discount,due:gross,returned:0};
+      if (!canApplyBackdatedDelta(p, d)) {
+        alert("Cannot safely delete: reversing this transaction would make stock, returns, payments, or balances negative. Reconcile later transactions first."); return;
+      }
+      if (!confirm(`Void this ${h.type === "restock" ? "added stock" : h.type === "return" ? "return" : "payment"} transaction? Its effects will be reversed in the live tracker and excluded from newly generated SOAs. The audit record will remain marked Voided.`)) return;
+      applyBackdatedDelta(p, d);
+      h.undone = true;
+      h.voidedAt = new Date().toISOString();
+      // Old undo snapshots are invalid after removing a non-latest transaction.
+      r.undoStack = []; r.redoStack = []; r.redoHistoryIds = [];
+      saveState();
+      showToast("Transaction voided; generate a new SOA to see the correction");
+    };
+
+    function renderHistory() {
+      const retailerSelect = document.getElementById("historyRetailerFilter");
+      const typeSelect = document.getElementById("historyTypeFilter");
+      const periodSelect = document.getElementById("historyPeriodFilter");
+      const summary = document.getElementById("historyPaymentSummary");
+      const chosen = retailerSelect.value;
+      const names = [...new Set([
+        ...state.retailers.map(r => r.name),
+        ...state.history.map(h => h.retailerName).filter(Boolean)
+      ])].sort((a,b) => a.localeCompare(b));
+      retailerSelect.innerHTML = '<option value="">All retailers</option>' + names.map(name =>
+        `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+      retailerSelect.value = names.includes(chosen) ? chosen : "";
+
+      // Six calendar months including the current month, using the user's local clock.
+      const now = new Date();
+      const cutoff = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const rows = (state.history || []).filter(h => {
+        if (retailerSelect.value && h.retailerName !== retailerSelect.value) return false;
+        if (typeSelect.value !== "all" && h.type !== typeSelect.value) return false;
+        const date = new Date(h.effectiveDate ? h.effectiveDate + "T12:00:00" : h.at);
+        if (Number.isNaN(date.getTime())) return false;
+        if (periodSelect.value === "6" && (date < cutoff || date > now)) return false;
+        return true;
+      }).sort((a,b) => new Date(b.at) - new Date(a.at));
+
+      const activePayments = rows.filter(h => h.type === "payment" && !h.undone);
+      const total = activePayments.reduce((sum,h) => sum + historyNumericAmount(h), 0);
+      summary.textContent = `${rows.length} activities · ${activePayments.length} active payments · Total payments: ${money(total)}`;
+      if (!rows.length) {
+        els.history.innerHTML = '<div class="empty" style="border:0;border-radius:0;">No activity matches these filters.</div>';
+        return;
+      }
+      els.history.innerHTML = rows.map(h => `
+        <div class="history-row"${h.undone ? ' style="opacity:.55"' : ''}>
+          <div class="history-time">${h.effectiveDate ? escapeHtml(h.effectiveDate) + " (backdated)" : new Date(h.at).toLocaleString()}</div>
+          <div><strong>${escapeHtml(h.retailerName || "Unknown retailer")}</strong> — ${escapeHtml(h.message || h.type)}${h.undone ? ' <strong>(Voided / Undone)</strong>' : ''}</div>
+          <div class="history-amount">${escapeHtml(h.amount || "")}${!h.undone && ["restock","return","payment"].includes(h.type) && !h.backdated ? `<div><button type="button" class="btn btn-danger" style="padding:5px 9px;font-size:12px;margin-top:6px" onclick="deleteHistoryTransaction('${h.id}')">Delete</button></div>` : ""}${h.backdated ? `<div style="font-size:11px;color:var(--muted);margin:5px 0">${h.affectsLive ? "SOA + Live" : "SOA only"}${h.soaReference ? " · " + escapeHtml(h.soaReference) : ""}</div><button class="btn btn-secondary" style="padding:5px 9px;font-size:12px" onclick="toggleBackdatedUndo('${h.id}')">${h.undone ? "Redo" : "Undo"}</button>` : ""}</div>
+        </div>
+      `).join("");
+    }
+
+    ["historyRetailerFilter", "historyTypeFilter", "historyPeriodFilter"].forEach(id =>
+      document.getElementById(id).addEventListener("change", renderHistory));
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function populateRetailerSelect(selectedRetailerId = "") {
+      const select = document.getElementById("productRetailerId");
+      if (!select) return;
+
+      const currentValue = selectedRetailerId || select.value;
+
+      select.innerHTML = state.retailers
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`)
+        .join("");
+
+      if (currentValue && state.retailers.some(r => r.id === currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
+    document.getElementById("addRetailerBtn").addEventListener("click", () => {
+      document.getElementById("retailerDialogTitle").textContent = "Add Retailer";
+      document.getElementById("retailerId").value = "";
+      document.getElementById("retailerName").value = "";
+      els.retailerDialog.showModal();
+    });
+
+    document.getElementById("retailerForm").addEventListener("submit", event => {
+      event.preventDefault();
+
+      const retailerId = document.getElementById("retailerId").value;
+      const name = document.getElementById("retailerName").value.trim();
+
+      if (!name) return;
+
+      if (retailerId) {
+        const retailer = getRetailer(retailerId);
+        if (!retailer) return;
+
+        pushUndo(retailer);
+        retailer.name = name;
+        addHistory("edit", retailer.name, "Retailer name updated");
+      } else {
+        state.retailers.push({
+          id: id(),
+          name,
+          products: [],
+          undoStack: [],
+          redoStack: [],
+          redoHistoryIds: [],
+          createdAt: new Date().toISOString()
+        });
+
+        addHistory("add", name, "Retailer added");
+      }
+
+      els.retailerDialog.close();
+      saveState();
+      showToast("Retailer saved");
+    });
+
+    window.editRetailer = function(retailerId) {
+      const retailer = getRetailer(retailerId);
+      if (!retailer) return;
+
+      document.getElementById("retailerDialogTitle").textContent = "Edit Retailer";
+      document.getElementById("retailerId").value = retailer.id;
+      document.getElementById("retailerName").value = retailer.name;
+      els.retailerDialog.showModal();
+    };
+
+    document.getElementById("addProductBtn").addEventListener("click", () => {
+      if (!state.retailers.length) {
+        alert("Add a retailer first, then add a product.");
+        return;
+      }
+
+      openAddProduct(state.retailers[0].id);
+    });
+
+    window.openAddProduct = function(retailerId) {
+      if (!state.retailers.length) {
+        alert("Add a retailer first.");
+        return;
+      }
+
+      document.getElementById("productDialogTitle").textContent = "Add Product";
+      document.getElementById("productId").value = "";
+      document.getElementById("productName").value = "";
+      document.getElementById("productUnitPrice").value = "";
+      document.getElementById("productOpeningStock").value = "";
+      document.getElementById("productOpeningStock").disabled = false;
+      document.getElementById("productRetailerId").disabled = false;
+
+      populateRetailerSelect(retailerId);
+      els.productDialog.showModal();
+    };
+
+    window.editProduct = function(retailerId, productId) {
+      const retailer = getRetailer(retailerId);
+      const product = getProduct(retailer, productId);
+      if (!retailer || !product) return;
+
+      document.getElementById("productDialogTitle").textContent = "Edit Product";
+      document.getElementById("productId").value = product.id;
+      populateRetailerSelect(retailer.id);
+      document.getElementById("productRetailerId").value = retailer.id;
+      document.getElementById("productRetailerId").disabled = true;
+      document.getElementById("productName").value = product.name;
+      document.getElementById("productUnitPrice").value = product.unitPrice;
+      document.getElementById("productOpeningStock").value = product.openingStock;
+      document.getElementById("productOpeningStock").disabled = true;
+
+      els.productDialog.addEventListener("close", () => {
+        document.getElementById("productRetailerId").disabled = false;
+        document.getElementById("productOpeningStock").disabled = false;
+      }, { once: true });
+
+      els.productDialog.showModal();
+    };
+
+    document.getElementById("productForm").addEventListener("submit", event => {
+      event.preventDefault();
+
+      const productId = document.getElementById("productId").value;
+      const retailerId = document.getElementById("productRetailerId").value;
+      const name = document.getElementById("productName").value.trim();
+      const unitPrice = Number(document.getElementById("productUnitPrice").value);
+      const openingStock = Math.max(
+        0,
+        Math.floor(Number(document.getElementById("productOpeningStock").value))
+      );
+
+      const retailer = getRetailer(retailerId);
+
+      if (!retailer || !name || !(unitPrice > 0) || Number.isNaN(openingStock)) {
+        alert("Please enter valid product details.");
+        return;
+      }
+
+      if (productId) {
+        const product = getProduct(retailer, productId);
+        if (!product) return;
+
+        const duplicate = retailer.products.some(
+          p => p.id !== productId &&
+          p.name.trim().toLowerCase() === name.toLowerCase()
+        );
+
+        if (duplicate) {
+          alert("This retailer already has a product with that name.");
+          return;
+        }
+
+        pushUndo(retailer);
+        product.name = name;
+        product.unitPrice = unitPrice;
+
+        addHistory(
+          "edit",
+          retailer.name,
+          `${name} product details updated`
+        );
+      } else {
+        const duplicate = retailer.products.some(
+          p => p.name.trim().toLowerCase() === name.toLowerCase()
+        );
+
+        if (duplicate) {
+          alert("This retailer already has a product with that name.");
+          return;
+        }
+
+        pushUndo(retailer);
+
+        const product = {
+          id: id(),
+          name,
+          unitPrice,
+          openingStock,
+          currentStock: openingStock,
+          quantitySold: 0,
+          totalRestocked: 0,
+          totalPaid: 0,
+          unpaid: Number((openingStock * unitPrice).toFixed(3)),
+          createdAt: new Date().toISOString()
+        };
+
+        retailer.products.push(product);
+
+        addHistory(
+          "add",
+          retailer.name,
+          `${name} added with ${openingStock} opening stock; unpaid created`,
+          money(product.unpaid)
+        );
+      }
+
+      els.productDialog.close();
+      saveState();
+      showToast("Product saved");
+    });
+
+    window.openStock = function(retailerId, productId) {
+      const retailer = getRetailer(retailerId);
+      const product = getProduct(retailer, productId);
+      if (!retailer || !product) return;
+
+      document.getElementById("stockRetailerId").value = retailer.id;
+      document.getElementById("stockProductId").value = product.id;
+      document.getElementById("newStock").value = "";
+
+      document.getElementById("stockDescription").textContent =
+        `${retailer.name} — ${product.name}: ${totalDelivered(product)} units delivered to date. Enter the additional delivery.`;
+
+      document.getElementById("stockImpactPreview").textContent =
+        `Current stock will increase by the quantity entered. Unpaid will increase by quantity × ${money(product.unitPrice)}.`;
+
+      els.stockDialog.showModal();
+    };
+
+    document.getElementById("newStock").addEventListener("input", () => {
+      const retailer = getRetailer(
+        document.getElementById("stockRetailerId").value
+      );
+
+      const product = getProduct(
+        retailer,
+        document.getElementById("stockProductId").value
+      );
+
+      const addedStock = Math.max(
+        0,
+        Math.floor(Number(document.getElementById("newStock").value))
+      );
+
+      const preview = document.getElementById("stockImpactPreview");
+
+      if (!product || Number.isNaN(addedStock)) return;
+
+      if (addedStock > 0) {
+        const unpaidIncrease = addedStock * product.unitPrice;
+
+        preview.textContent =
+          `New total delivered: ${totalDelivered(product) + addedStock}. Unpaid will increase by ${money(unpaidIncrease)}.`;
+      } else {
+        preview.textContent = "Enter the quantity being added.";
+      }
+    });
+
+    document.getElementById("stockForm").addEventListener("submit", event => {
+      event.preventDefault();
+
+      const retailer = getRetailer(
+        document.getElementById("stockRetailerId").value
+      );
+
+      const product = getProduct(
+        retailer,
+        document.getElementById("stockProductId").value
+      );
+
+      const enteredQuantity =
+        Number(document.getElementById("newStock").value);
+
+      if (!retailer || !product || !Number.isFinite(enteredQuantity) || enteredQuantity <= 0) {
+        alert("Please enter a valid quantity to add.");
+        return;
+      }
+
+      const addedStock = Math.floor(enteredQuantity);
+      const unitPrice = Number(product.unitPrice) || 0;
+      const oldStock = Number(product.currentStock) || 0;
+      const oldUnpaid = Number(product.unpaid) || 0;
+
+      if (!(unitPrice > 0)) {
+        alert("This product needs a valid unit price before stock can be added.");
+        return;
+      }
+
+      pushUndo(retailer);
+
+      const unpaidIncrease =
+        Number((addedStock * unitPrice).toFixed(3));
+
+      product.currentStock = oldStock + addedStock;
+      product.totalRestocked =
+        (Number(product.totalRestocked) || 0) + addedStock;
+
+      product.unpaid =
+        Number((oldUnpaid + unpaidIncrease).toFixed(3));
+
+      addHistory(
+        "restock",
+        retailer.name,
+        `${product.name}: ${addedStock} units added; stock increased from ${oldStock} to ${product.currentStock}; unpaid increased`,
+        money(unpaidIncrease),
+        { productId: product.id, productName: product.name, quantity: addedStock, unitPrice, value: unpaidIncrease }
+      );
+
+      els.stockDialog.close();
+      saveState();
+
+      showToast(
+        `${product.name}: ${addedStock} units added — unpaid +${money(unpaidIncrease)}`
+      );
+    });
+
+    window.openReturn = function(retailerId, productId) {
+      const retailer = getRetailer(retailerId);
+      const product = getProduct(retailer, productId);
+      if (!retailer || !product) return;
+
+      document.getElementById("returnRetailerId").value = retailer.id;
+      document.getElementById("returnProductId").value = product.id;
+      document.getElementById("returnQuantity").value = "";
+      document.getElementById("returnQuantity").removeAttribute("max");
+
+      document.getElementById("returnDescription").textContent =
+        `${retailer.name} — ${product.name}: ${totalDelivered(product)} total delivered; ${money(Math.max(Number(product.unpaid) || 0, 0))} unpaid.`;
+
+      document.getElementById("returnImpactPreview").textContent =
+        `Returns reduce the amount due by quantity × ${money(product.unitPrice)}. Total delivered remains unchanged.`;
+
+      els.returnDialog.showModal();
+    };
+
+    document.getElementById("returnQuantity").addEventListener("input", () => {
+      const retailer = getRetailer(document.getElementById("returnRetailerId").value);
+      const product = getProduct(retailer, document.getElementById("returnProductId").value);
+      const qty = Math.max(0, Math.floor(Number(document.getElementById("returnQuantity").value) || 0));
+      const preview = document.getElementById("returnImpactPreview");
+      if (!product || qty <= 0) {
+        preview.textContent = product ? `Enter returned quantity. Unit price: ${money(product.unitPrice)}.` : "Enter returned quantity.";
+        return;
+      }
+      if (qty > Number(product.currentStock || 0)) {
+        preview.textContent = `Cannot return ${qty} units because current stock is only ${product.currentStock}.`;
+        return;
+      }
+      const reduction = Number((qty * Number(product.unitPrice || 0)).toFixed(3));
+      preview.textContent = `Total delivered stays ${totalDelivered(product)}. Unpaid will decrease by ${money(reduction)} to ${money(Math.max(0, Number(product.unpaid || 0) - reduction))}.`;
+    });
+
+    document.getElementById("returnForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const retailer = getRetailer(document.getElementById("returnRetailerId").value);
+      const product = getProduct(retailer, document.getElementById("returnProductId").value);
+      const qty = Math.floor(Number(document.getElementById("returnQuantity").value));
+      if (!retailer || !product || !Number.isFinite(qty) || qty <= 0) {
+        alert("Please enter a valid returned quantity.");
+        return;
+      }
+      const oldStock = Number(product.currentStock) || 0;
+      if (qty > oldStock) {
+        alert(`Cannot return ${qty} units. Current stock is only ${oldStock}.`);
+        return;
+      }
+      const unitPrice = Number(product.unitPrice) || 0;
+      if (!(unitPrice > 0)) {
+        alert("This product needs a valid unit price before goods can be returned.");
+        return;
+      }
+      const oldUnpaid = Number(product.unpaid) || 0;
+      const unpaidReduction = Number((qty * unitPrice).toFixed(3));
+
+      pushUndo(retailer);
+      product.currentStock = oldStock - qty; // Legacy internal inventory; displayed delivered total is independent.
+      product.unpaid = Number(Math.max(0, oldUnpaid - unpaidReduction).toFixed(3));
+      product.totalReturned = (Number(product.totalReturned) || 0) + qty;
+
+      const returnNumber = nextReturnNumber();
+      const returnHistory = addHistory(
+        "return",
+        retailer.name,
+        `${product.name}: ${qty} units returned; stock decreased from ${oldStock} to ${product.currentStock}; unpaid decreased`,
+        money(unpaidReduction),
+        { productId: product.id, productName: product.name, quantity: qty, unitPrice, value: unpaidReduction }
+      );
+      returnHistory.retailerId = retailer.id;
+      returnHistory.returnNumber = returnNumber;
+      returnHistory.soaReference = returnNumber;
+
+      els.returnDialog.close();
+      saveState();
+      showToast(`${product.name}: ${qty} returned — unpaid -${money(unpaidReduction)}`);
+    });
+
+    function calculatePaymentSettlement(product, cash, rate) {
+      const price = Number(product?.unitPrice) || 0;
+      const outstanding = Math.max(0, Number(product?.unpaid) || 0);
+      const stock = totalDelivered(product);
+      if (!(price > 0) || !(cash > 0) || !Number.isFinite(rate) || rate < 0 || rate >= 100) return null;
+      // Convert actual cash received into the gross face value of the units paid for.
+      // The discount is a concession, never additional cash.
+      const gross = Number((cash / (1 - rate / 100)).toFixed(3));
+      const discount = Number((gross - cash).toFixed(3));
+      const exactPieces = gross / price;
+      const pieces = Math.round(exactPieces);
+      return {cash, rate, gross, discount, exactPieces, pieces, outstanding, stock, price};
+    }
+
+    function updatePaymentPreview() {
+      const retailer = getRetailer(document.getElementById("paymentRetailerId").value);
+      const product = getProduct(retailer, document.getElementById("paymentProductId").value);
+      const cash = Number(document.getElementById("paymentAmount").value);
+      const rate = Number(document.getElementById("paymentDiscount").value);
+      const preview = document.getElementById("paymentPiecesPreview");
+      if (!product) { preview.textContent = ""; return; }
+      const result = calculatePaymentSettlement(product, cash, rate);
+      if (!result) {
+        preview.textContent = `Unit price: ${money(product.unitPrice)}. Enter a cash payment and a discount from 0% to below 100%.`;
+        return;
+      }
+      const remaining = result.outstanding - result.gross;
+      preview.textContent = `Cash received: ${money(result.cash)} | Discount granted: ${money(result.discount)} (${rate}%) | Balance settled: ${money(result.gross)} | Remaining due: ${money(Math.max(0, remaining))}`;
+    }
+
+    window.openPayment = function(retailerId, productId) {
+      const retailer = getRetailer(retailerId);
+      const product = getProduct(retailer, productId);
+      if (!retailer || !product) return;
+      document.getElementById("paymentRetailerId").value = retailer.id;
+      document.getElementById("paymentProductId").value = product.id;
+      document.getElementById("paymentAmount").value = "";
+      document.getElementById("paymentDiscount").value = "0";
+      document.getElementById("paymentNote").value = "";
+      document.getElementById("paymentDescription").textContent =
+        `${retailer.name} — ${product.name} currently owes ${money(Math.max(product.unpaid || 0, 0))}.`;
+      updatePaymentPreview();
+      els.paymentDialog.showModal();
+    };
+
+    ["paymentAmount", "paymentDiscount"].forEach(field =>
+      document.getElementById(field).addEventListener("input", updatePaymentPreview));
+
+    document.getElementById("paymentForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const retailer = getRetailer(document.getElementById("paymentRetailerId").value);
+      const product = getProduct(retailer, document.getElementById("paymentProductId").value);
+      const cash = Number(document.getElementById("paymentAmount").value);
+      const rate = Number(document.getElementById("paymentDiscount").value);
+      const note = document.getElementById("paymentNote").value.trim();
+      if (!retailer || !product) return;
+      const result = calculatePaymentSettlement(product, cash, rate);
+      if (!result) { alert("Enter a valid payment and discount percentage (0% to below 100%)."); return; }
+      const {gross, discount, exactPieces, pieces, outstanding, stock, price} = result;
+      if (gross > outstanding + 0.001) {
+        alert(`Payment plus discount (${money(gross)}) exceeds the outstanding balance (${money(outstanding)}).`);
+        return;
+      }
+      
+
+      pushUndo(retailer);
+      // Payment changes monetary balances only. No inferred physical stock movement.
+      product.totalPaid = Number(((Number(product.totalPaid) || 0) + cash).toFixed(3));
+      product.totalDiscount = Number(((Number(product.totalDiscount) || 0) + discount).toFixed(3));
+      product.unpaid = Number(Math.max(0, outstanding - gross).toFixed(3));
+      addHistory("payment", retailer.name,
+        `${product.name}: cash received ${money(cash)}${discount ? `; early payment discount ${rate}% (${money(discount)}); balance settled ${money(gross)}` : ""}${note ? ` — ${note}` : ""}`,
+        money(cash),
+        {productId: product.id, productName: product.name, quantity: pieces, unitPrice: price, value: cash, cashReceived: cash, discountPercent: rate, discountAmount: discount, settledAmount: gross, note}
+      );
+      els.paymentDialog.close();
+      saveState();
+      showToast(`${product.name}: received ${money(cash)}${discount ? `, discount ${money(discount)}` : ""}`);
+    });
+
+    window.deleteProduct = function(retailerId, productId) {
+      const retailer = getRetailer(retailerId);
+      const product = getProduct(retailer, productId);
+      if (!retailer || !product) return;
+
+      if (!confirm(
+        `Delete ${product.name} from ${retailer.name}? This can be restored with Undo.`
+      )) return;
+
+      pushUndo(retailer);
+      retailer.products = retailer.products.filter(p => p.id !== productId);
+
+      addHistory(
+        "delete",
+        retailer.name,
+        `${product.name} deleted`
+      );
+
+      saveState();
+      showToast("Product deleted");
+    };
+
+    // Undo/Redo transaction rule for Monthly Analytics:
+    // - Add Stock / Payment / Return counts while active.
+    // - Undo marks the exact latest reversible history record as cancelled.
+    // - Redo re-activates that same history record.
+    // The audit record stays in History, but cancelled records are excluded from analytics.
+    const REVERSIBLE_ANALYTICS_TYPES = new Set(["restock", "payment", "return"]);
+
+    window.undoRetailer = function(retailerId) {
+      const retailer = getRetailer(retailerId);
+      if (!retailer) return;
+
+      retailer.undoStack = Array.isArray(retailer.undoStack) ? retailer.undoStack : [];
+      retailer.redoStack = Array.isArray(retailer.redoStack) ? retailer.redoStack : [];
+      retailer.redoHistoryIds = Array.isArray(retailer.redoHistoryIds) ? retailer.redoHistoryIds : [];
+
+      if (!retailer.undoStack.length) {
+        showToast("Nothing to undo for this retailer");
+        return;
+      }
+
+      // Capture the latest active stock/payment/return transaction BEFORE
+      // adding the Undo audit row, and cancel it for analytics.
+      const targetHistory = (state.history || []).find(h =>
+        h.retailerName === retailer.name &&
+        REVERSIBLE_ANALYTICS_TYPES.has(h.type) &&
+        !h.backdated &&
+        !h.undone
+      );
+
+      retailer.redoStack.push(snapshotRetailer(retailer));
+      const previous = retailer.undoStack.pop();
+      applySnapshot(retailer, previous);
+
+      if (targetHistory) {
+        targetHistory.undone = true;
+        retailer.redoHistoryIds.push(targetHistory.id);
+      } else {
+        retailer.redoHistoryIds.push(null);
+      }
+
+      addHistory(
+        "undo",
+        retailer.name,
+        "Last retailer change undone",
+        "",
+        { targetHistoryId: targetHistory?.id || null, targetType: targetHistory?.type || null }
+      );
+      saveState();
+      showToast("Change undone");
+    };
+
+    window.redoRetailer = function(retailerId) {
+      const retailer = getRetailer(retailerId);
+      if (!retailer) return;
+
+      retailer.undoStack = Array.isArray(retailer.undoStack) ? retailer.undoStack : [];
+      retailer.redoStack = Array.isArray(retailer.redoStack) ? retailer.redoStack : [];
+      retailer.redoHistoryIds = Array.isArray(retailer.redoHistoryIds) ? retailer.redoHistoryIds : [];
+
+      if (!retailer.redoStack.length) {
+        showToast("Nothing to redo for this retailer");
+        return;
+      }
+
+      retailer.undoStack.push(snapshotRetailer(retailer));
+      const next = retailer.redoStack.pop();
+      applySnapshot(retailer, next);
+
+      const targetHistoryId = retailer.redoHistoryIds.pop() || null;
+      const targetHistory = targetHistoryId
+        ? (state.history || []).find(h => h.id === targetHistoryId)
+        : null;
+      if (targetHistory) targetHistory.undone = false;
+
+      addHistory(
+        "redo",
+        retailer.name,
+        "Last undone retailer change reapplied",
+        "",
+        { targetHistoryId, targetType: targetHistory?.type || null }
+      );
+      saveState();
+      showToast("Change redone");
+    };
+
+    window.deleteRetailer = function(retailerId) {
+      const retailer = getRetailer(retailerId);
+      if (!retailer) return;
+
+      if (!confirm(
+        `Delete ${retailer.name} and all of its products? This cannot be undone unless you have a backup.`
+      )) return;
+
+      state.retailers =
+        state.retailers.filter(r => r.id !== retailerId);
+
+      addHistory("delete", retailer.name, "Retailer deleted");
+      saveState();
+    };
+
+    els.search.addEventListener("input", () => {
+      const d = document.getElementById("dashboardSearchInput");
+      if (d && d.value !== els.search.value) d.value = els.search.value;
+      renderRetailers();
+    });
+    els.filter.addEventListener("change", () => {
+      const d = document.getElementById("dashboardStatusFilter");
+      if (d && d.value !== els.filter.value) d.value = els.filter.value;
+      renderRetailers();
+    });
+    document.getElementById("dashboardSearchInput")?.addEventListener("input", event => {
+      els.search.value = event.target.value;
+      renderRetailers();
+    });
+    document.getElementById("dashboardStatusFilter")?.addEventListener("change", event => {
+      els.filter.value = event.target.value;
+      renderRetailers();
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const backup = {
+        backupVersion: 2,
+        exportedAt: new Date().toISOString(),
+        appName: "Pud Business System",
+        data: state
+      };
+
+      const blob = new Blob(
+        [JSON.stringify(backup, null, 2)],
+        { type: "application/json" }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download =
+        `pud-business-backup-${new Date().toISOString().replaceAll(":", "-").slice(0, 19)}.json`;
+
+      link.click();
+      URL.revokeObjectURL(url);
+      localStorage.setItem("pud-last-backup-at", new Date().toISOString());
+      showToast("Backup downloaded safely");
+    });
+
+    document.getElementById("importBtn").addEventListener("click", () => {
+      document.getElementById("importFile").click();
+    });
+
+    document.getElementById("importFile").addEventListener("change", async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        const raw = JSON.parse(await file.text());
+        const importedState = normalizeState(raw.data || raw);
+
+        if (!Array.isArray(importedState.retailers) || !Array.isArray(importedState.history)) {
+          throw new Error("Invalid backup");
+        }
+
+        const retailerCount = importedState.retailers.length;
+        const productCount = importedState.retailers.reduce(
+          (sum, retailer) => sum + retailer.products.length,
+          0
+        );
+        const invoiceCount = importedState.documents?.invoices?.length || 0;
+        const statementCount = importedState.documents?.statements?.length || 0;
+
+        const proceed = confirm(
+          `Restore this backup?\n\n` +
+          `Retailers: ${retailerCount}\n` +
+          `Products: ${productCount}\n` +
+          `Invoices: ${invoiceCount}\n` +
+          `Statements: ${statementCount}\n\n` +
+          `This will overwrite the current cloud data.`
+        );
+
+        if (!proceed) {
+          event.target.value = "";
+          return;
+        }
+
+        const finalWarning = confirm(
+          "Final confirmation: overwrite the current app data with this backup?"
+        );
+
+        if (!finalWarning) {
+          event.target.value = "";
+          return;
+        }
+
+        state = importedState;
+        await saveState();
+        render();
+        showToast("Backup restored successfully");
+      } catch (error) {
+        console.error(error);
+        alert("This backup file is invalid or could not be restored.");
+      }
+
+      event.target.value = "";
+    });
+
+    async function showSignedInApp(user) {
+      currentUser = user;
+      els.userEmail.textContent = user.email || "Signed in";
+      els.authScreen.classList.add("hidden");
+      els.mainApp.classList.remove("hidden");
+
+      try {
+        await loadCloudState();
+      } catch (error) {
+        console.error("Initial cloud load failed:", error);
+        state = loadLocalBackup();
+        render();
+        showToast("Could not load cloud data");
+      }
+
+      checkBackupReminder();
+
+      clearInterval(pollTimer);
+
+      pollTimer = setInterval(() => {
+        checkForCloudUpdates().catch(console.error);
+      }, 10000);
+    }
+
+    function showLoginScreen() {
+      currentUser = null;
+      clearInterval(pollTimer);
+      pollTimer = null;
+      els.mainApp.classList.add("hidden");
+      els.authScreen.classList.remove("hidden");
+      els.loginPassword.value = "";
+      els.authError.textContent = "";
+      setSyncStatus("Offline");
+    }
+
+    els.loginForm.addEventListener("submit", async event => {
+      event.preventDefault();
+
+      els.authError.textContent = "";
+      els.loginBtn.disabled = true;
+      els.loginBtn.textContent = "Signing in…";
+
+      const email = els.loginEmail.value.trim();
+      const password = els.loginPassword.value;
+
+      const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+      els.loginBtn.disabled = false;
+      els.loginBtn.textContent = "Sign In";
+
+      if (error) {
+        els.authError.textContent =
+          error.message || "Sign-in failed.";
+        return;
+      }
+
+      await showSignedInApp(data.user);
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await saveChain;
+
+      const { error } = await supabaseClient.auth.signOut();
+
+      if (error) {
+        showToast("Could not log out");
+        return;
+      }
+
+      showLoginScreen();
+    });
+
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
+        showLoginScreen();
+      }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        checkForCloudUpdates().catch(console.error);
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    });
+
+
+    function todayIso() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function addDaysIso(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function fillRetailerOptions(selectId) {
+      const select = document.getElementById(selectId);
+      select.innerHTML = state.retailers
+        .slice()
+        .sort((a,b) => a.name.localeCompare(b.name))
+        .map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`)
+        .join("");
+    }
+
+    function renderInvoiceLines() {
+      const retailer = getRetailer(document.getElementById("invoiceRetailer").value);
+      const box = document.getElementById("invoiceLines");
+      if (!retailer) {
+        box.innerHTML = '<div class="empty">No retailer selected.</div>';
+        return;
+      }
+      box.innerHTML = `
+        <table class="report-table">
+          <thead><tr><th>Product</th><th>Unit Price</th><th>Quantity</th></tr></thead>
+          <tbody>
+            ${retailer.products.map(p => `
+              <tr>
+                <td>${escapeHtml(p.name)}</td>
+                <td>${money(p.unitPrice)}</td>
+                <td><input class="invoice-qty" data-product-id="${p.id}" type="number" min="0" step="1" value="0" style="max-width:110px"></td>
+              </tr>`).join("")}
+          </tbody>
+        </table>`;
+    }
+
+    function safeFilePart(value) {
+      return String(value || "document").replace(/[^a-z0-9_-]/gi, "-");
+    }
+
+    function addPudDocumentHeader(doc, documentTitle) {
+      // Approved minimalist header: text-only PUD at top-left, no top-right company text.
+      doc.setTextColor(105, 211, 220);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(34);
+      doc.text("PUD", 14, 25);
+
+      doc.setDrawColor(95, 118, 128);
+      doc.setLineWidth(0.4);
+      doc.line(14, 36, 196, 36);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(documentTitle === "STATEMENT OF ACCOUNT" ? 18 : 22);
+      doc.setTextColor(13, 34, 43);
+      doc.text(documentTitle, 14, 52);
+      doc.setTextColor(0, 0, 0);
+    }
+
+    function drawInfoBox(doc, x, y, rows, labelWidth = 34, valueWidth = 48) {
+      let yy = y;
+      rows.forEach((row) => {
+        const label = String(row[0] ?? "");
+        const value = String(row[1] ?? "");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.2);
+        const labelLines = doc.splitTextToSize(label, labelWidth - 6);
+        doc.setFont("helvetica", "normal");
+        const valueLines = doc.splitTextToSize(value, valueWidth - 6);
+
+        const lineCount = Math.max(labelLines.length, valueLines.length, 1);
+        const rowH = Math.max(9, 4.2 * lineCount + 4.2);
+
+        doc.setFillColor(244, 248, 249);
+        doc.setDrawColor(205, 215, 219);
+        doc.rect(x, yy, labelWidth, rowH, "FD");
+        doc.setFillColor(255, 255, 255);
+        doc.rect(x + labelWidth, yy, valueWidth, rowH, "FD");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.2);
+        doc.setTextColor(20, 38, 46);
+        doc.text(labelLines, x + 3, yy + 5.8);
+
+        doc.setFont("helvetica", "normal");
+        doc.text(valueLines, x + labelWidth + 3, yy + 5.8);
+        yy += rowH;
+      });
+      doc.setTextColor(0, 0, 0);
+      return yy;
+    }
+
+    function drawNotesAndFooter(doc, notesText = "") {
+      const noteY = 238;
+      doc.setFillColor(246, 249, 250);
+      doc.rect(14, noteY, 182, 27, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(14, 35, 44);
+      doc.text("Notes", 19, noteY + 8);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      const note = notesText || "Thank you for your continued support.";
+      const wrapped = doc.splitTextToSize(note, 168);
+      doc.text(wrapped.slice(0, 2), 19, noteY + 16);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.text("PUD", 14, 282);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.text("Good Products A Better You", 14, 287);
+      doc.setTextColor(0, 0, 0);
+    }
+
+    function downloadInvoicePdf(invoice) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      addPudDocumentHeader(doc, "INVOICE");
+
+      // Bill To block, matching approved reference.
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(14, 35, 44);
+      doc.text("Bill To", 14, 66);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const retailerLines = doc.splitTextToSize(String(invoice.retailerName || ""), 78);
+      doc.text(retailerLines, 14, 75);
+      const retailerBottomY = 75 + Math.max(0, retailerLines.length - 1) * 4.4;
+      doc.text("Kuwait", 14, retailerBottomY + 8);
+
+      const infoBottomY = drawInfoBox(doc, 112, 60, [
+        ["Invoice No", invoice.invoiceNumber || ""],
+        ["Invoice Date", invoice.invoiceDate || ""]
+      ], 34, 50);
+      const invoiceTableStartY = Math.max(103, infoBottomY + 10, retailerBottomY + 18);
+
+      const bodyRows = (invoice.lines || []).map((line, i) => [
+        i + 1,
+        line.productName,
+        Number(line.quantity || 0),
+        Number(line.unitPrice || 0).toFixed(3),
+        Number(line.total || 0).toFixed(3)
+      ]);
+
+      doc.autoTable({
+        startY: invoiceTableStartY,
+        margin: { left: 14, right: 14 },
+        theme: "grid",
+        tableWidth: 182,
+        head: [["#", "Product", "Qty", "Unit Price (KD)", "Total (KD)"]],
+        body: bodyRows.length ? bodyRows : [["", "", "", "", ""]],
+        styles: { fontSize: 8.5, cellPadding: 3, lineColor: [207, 218, 222], lineWidth: 0.25, textColor: [18, 34, 41] },
+        headStyles: { fillColor: [105, 211, 220], textColor: [12, 31, 38], fontStyle: "bold", halign: "center" },
+        columnStyles: {
+          0: { cellWidth: 14, halign: "center" },
+          1: { cellWidth: 68 },
+          2: { cellWidth: 22, halign: "center" },
+          3: { cellWidth: 36, halign: "right" },
+          4: { cellWidth: 42, halign: "right" }
+        },
+        didDrawPage: () => {}
+      });
+
+      let totalsY = Math.max(doc.lastAutoTable.finalY, 177);
+      const tx = 118, tw = 78, rh = 9;
+      const totalRows = [
+        ["Subtotal (KD)", Number(invoice.total || 0).toFixed(3)],
+        ["Total (KD)", Number(invoice.total || 0).toFixed(3)]
+      ];
+      totalRows.forEach((r, i) => {
+        const y = totalsY + i * rh;
+        if (i === totalRows.length - 1) doc.setFillColor(193, 239, 243); else doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(205, 216, 220);
+        doc.rect(tx, y, tw, rh, "FD");
+        doc.setFont("helvetica", i === totalRows.length - 1 ? "bold" : "normal");
+        doc.setFontSize(8.8);
+        doc.text(r[0], tx + 4, y + 6);
+        doc.text(r[1], tx + tw - 4, y + 6, { align: "right" });
+      });
+
+      drawNotesAndFooter(doc, invoice.notes || "Thank you for your continued support.");
+
+      // Signature line shown only on invoice, as in reference.
+      doc.setDrawColor(25, 25, 25);
+      doc.setLineWidth(0.35);
+      doc.line(132, 280, 194, 280);
+      doc.setFontSize(7.5);
+      doc.text("Authorized Signature", 163, 286, { align: "center" });
+
+      doc.save(`${safeFilePart(invoice.invoiceNumber)}.pdf`);
+    }
+
+    function invoicesForRetailer(retailerId, statementDate = null) {
+      return state.documents.invoices
+        .filter(invoice => invoice.retailerId === retailerId)
+        .filter(invoice => !statementDate || invoice.invoiceDate <= statementDate)
+        .slice()
+        .sort((a, b) => {
+          const dateCompare = String(a.invoiceDate).localeCompare(String(b.invoiceDate));
+          return dateCompare || String(a.invoiceNumber).localeCompare(String(b.invoiceNumber));
+        });
+    }
+
+    // Unique, persistent credit-note numbers for live goods returns.
+    function nextReturnNumber() {
+      state.documents.nextReturnSequence = Math.max(
+        Number(state.documents.nextReturnSequence) || 1,
+        1 + Math.max(0, ...(state.history || []).map(h => {
+          const m = String(h.returnNumber || "").match(/^RET-(\\d+)$/);
+          return m ? Number(m[1]) : 0;
+        }))
+      );
+      const number = `RET-${String(state.documents.nextReturnSequence).padStart(5, "0")}`;
+      state.documents.nextReturnSequence++;
+      return number;
+    }
+
+    function liveReturnDocuments(retailerId) {
+      return (state.history || []).filter(h =>
+        h.type === "return" && !h.backdated && !h.undone &&
+        (h.retailerId === retailerId ||
+          (!h.retailerId && h.retailerName === getRetailer(retailerId)?.name))
+      ).slice().sort((a,b) => String(b.at).localeCompare(String(a.at)));
+    }
+
+    window.downloadReturnDocument = function(historyId) {
+      const h = (state.history || []).find(x => x.id === historyId && x.type === "return");
+      if (!h || h.undone) return alert("This return was undone and its document is no longer available.");
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF();
+      addPudDocumentHeader(doc, "GOODS RETURN / CREDIT NOTE");
+      const retailer = getRetailer(h.retailerId);
+      const reference = h.returnNumber || h.soaReference || `RETURN-${String(h.id).slice(0,8)}`;
+      doc.setFontSize(11);
+      doc.text(`Return No.: ${reference}`, 14, 66);
+      doc.text(`Retailer: ${retailer?.name || h.retailerName || ""}`, 14, 76);
+      doc.text(`Date: ${h.effectiveDate || String(h.at).slice(0,10)}`, 14, 86);
+      doc.text(`Status: ${h.undone ? "VOID / UNDONE" : "ACTIVE"}`, 14, 96);
+      const quantity = historyQuantity(h);
+      const unitPrice = Number(h.details?.unitPrice || 0);
+      const total = Number((quantity * unitPrice).toFixed(3)) || historyNumericAmount(h);
+      doc.autoTable({
+        startY: 108,
+        head: [["Product", "Returned Units", "Unit Price (KD)", "Credit (KD)"]],
+        body: [[h.details?.productName || "Goods returned", String(quantity),
+          unitPrice.toFixed(3), total.toFixed(3)]],
+        theme: "grid"
+      });
+      doc.setFontSize(11);
+      doc.text(`Total Return Credit: ${money(total)}`, 14, (doc.lastAutoTable?.finalY || 135) + 14);
+      doc.save(`${safeFilePart(reference)}.pdf`);
+    };
+
+    function soaReturns(retailer, statementDate) {
+      return (state.history || []).filter(h =>
+        h.type === "return" && !h.undone &&
+        (h.retailerId ? h.retailerId === retailer.id : h.retailerName === retailer.name) &&
+        (h.effectiveDate || String(h.at || "").slice(0, 10)) <= statementDate
+      ).map(h => ({
+        id: h.id,
+        date: h.effectiveDate || String(h.at || "").slice(0, 10),
+        product: h.details?.productName || "Returned goods",
+        quantity: historyQuantity(h),
+        unitPrice: Number(h.details?.unitPrice || 0),
+        amount: Number((historyQuantity(h) * Number(h.details?.unitPrice || 0)).toFixed(3)) || historyNumericAmount(h),
+        reference: h.returnNumber || h.soaReference || `RETURN-${String(h.id).slice(0,8)}`,
+        description: h.message || "Goods returned"
+      })).sort((a,b) => a.date.localeCompare(b.date));
+    }
+
+    function buildStatementRecord(retailer, statementDate) {
+      const invoices = invoicesForRetailer(retailer.id, statementDate);
+      const invoiceTotal = invoices.reduce((sum, invoice) => sum + Number(invoice.total || 0), 0);
+      const totals = retailerTotals(retailer);
+      const returns = soaReturns(retailer, statementDate);
+      return {
+        id: id(),
+        retailerId: retailer.id,
+        retailerName: retailer.name,
+        statementDate,
+        createdAt: new Date().toISOString(),
+        invoiceTotal: Number(invoiceTotal.toFixed(3)),
+        totalPaid: Number(totals.paid.toFixed(3)),
+        outstanding: Number(totals.unpaid.toFixed(3)),
+        returns,
+        totalReturns: Number(returns.reduce((sum, ret) => sum + ret.amount, 0).toFixed(3)),
+        invoices: invoices.map(invoice => JSON.parse(JSON.stringify(invoice)))
+      };
+    }
+
+
+    // Hi Buy: retailer-issued, independently verified statement through 2026-09-30.
+    // These rows are an immutable historical SOA snapshot; they do not alter stock,
+    // product balances, payment records, invoices or the Supabase schema.
+    const HIBUY_RETAILER_ID = "8f173c03-19b4-48d7-8a00-d875d3ca01a3";
+    const HIBUY_CONFIRMED_THROUGH = "2026-09-30";
+    const HIBUY_CONFIRMED_ROWS = [{"date":"2026-04-07","ref":"36558","debitFils":16250,"creditFils":0},{"date":"2026-04-07","ref":"77405","debitFils":16250,"creditFils":0},{"date":"2026-04-07","ref":"67483","debitFils":16250,"creditFils":0},{"date":"2026-05-25","ref":"472658","debitFils":9750,"creditFils":0},{"date":"2026-05-25","ref":"36559","debitFils":19500,"creditFils":0},{"date":"2026-05-25","ref":"77406","debitFils":9750,"creditFils":0},{"date":"2026-05-25","ref":"56373","debitFils":19500,"creditFils":0},{"date":"2026-07-14","ref":"BANK TRANSFER","debitFils":0,"creditFils":16250},{"date":"2026-07-25","ref":"472660","debitFils":16260,"creditFils":0},{"date":"2026-07-25","ref":"56375","debitFils":16260,"creditFils":0},{"date":"2026-07-25","ref":"67485","debitFils":16260,"creditFils":0},{"date":"2026-07-25","ref":"77408","debitFils":16260,"creditFils":0},{"date":"2026-07-26","ref":"36561","debitFils":16260,"creditFils":0},{"date":"2026-08-16","ref":"BANK TRANSFER","debitFils":0,"creditFils":25188},{"date":"2026-08-20","ref":"INV-901743","debitFils":16240,"creditFils":0},{"date":"2026-08-29","ref":"INV-658845","debitFils":16240,"creditFils":0},{"date":"2026-09-08","ref":"INV-845603","debitFils":16240,"creditFils":0},{"date":"2026-09-08","ref":"INV-751688","debitFils":16240,"creditFils":0},{"date":"2026-09-09","ref":"INV-672187","debitFils":16240,"creditFils":0},{"date":"2026-09-09","ref":"INV-894008","debitFils":16240,"creditFils":0},{"date":"2026-09-09","ref":"INV-787986","debitFils":16240,"creditFils":0},{"date":"2026-09-09","ref":"INV-702228","debitFils":16240,"creditFils":0},{"date":"2026-09-14","ref":"BANK TRANSFER","debitFils":0,"creditFils":42250},{"date":"2026-09-21","ref":"INV-952469","debitFils":16240,"creditFils":0},{"date":"2026-09-21","ref":"INV-930265","debitFils":16240,"creditFils":0}];
+
+    function isHiBuyStatement(statement) {
+      // Match both the original retailer UUID and name: restored backups can
+      // recreate the retailer with a new ID.
+      return statement.retailerId === HIBUY_RETAILER_ID ||
+        /^hi[\s-]*buy$/i.test(String(statement.retailerName || "").trim());
+    }
+
+    function hiBuyAuthoritativeLedger(statement) {
+      const dateLimit = statement.statementDate;
+      const txns = HIBUY_CONFIRMED_ROWS.filter(r => r.date <= dateLimit).map(r => ({
+        date:r.date, type:r.creditFils ? "Payment" : "Invoice", ref:r.ref,
+        desc:r.creditFils ? "Retailer bank transfer" : "Retailer statement invoice",
+        debit:r.debitFils/1000, credit:r.creditFils/1000, order:1
+      }));
+      if (dateLimit > HIBUY_CONFIRMED_THROUGH) {
+        const postInvoices = (state.documents?.invoices || []).filter(inv =>
+          (inv.retailerId === statement.retailerId || (!inv.retailerId && /^hi[\s-]*buy$/i.test(String(inv.retailerName || "")))) && inv.invoiceDate > HIBUY_CONFIRMED_THROUGH && inv.invoiceDate <= dateLimit);
+        const invoiceKeys = new Set();
+        for (const inv of postInvoices) {
+          const fils = Math.round(Number(inv.total || 0)*1000);
+          const key = `${inv.invoiceDate}|${fils}`;
+          invoiceKeys.add(key);
+          txns.push({date:inv.invoiceDate, type:"Invoice", ref:inv.invoiceNumber || "",
+            desc:"Invoice (document only; stock delivery not billed again)", debit:fils/1000, credit:0, order:1});
+        }
+        // Payments and returns are financial credits. An ordinary delivery is a
+        // debit only when no invoice for that delivery has already been recorded.
+        for (const h of (state.history || [])) {
+          if (h.undone || (h.retailerId ? h.retailerId !== statement.retailerId : h.retailerName !== statement.retailerName)) continue;
+          if (!["restock","return","payment"].includes(h.type)) continue;
+          const date=h.effectiveDate || String(h.at || "").slice(0,10);
+          if (date <= HIBUY_CONFIRMED_THROUGH || date > dateLimit) continue;
+          const amount = h.type === "payment" ? Number(h.details?.settledAmount ?? historyNumericAmount(h)) :
+            h.type === "return" ? Number((historyQuantity(h)*Number(h.details?.unitPrice || 0)).toFixed(3)) || historyNumericAmount(h) : historyNumericAmount(h);
+          const fils=Math.round(amount*1000);
+          if (!Number.isFinite(fils) || fils <= 0) continue;
+          if (h.type === "restock") {
+            const key=`${date}|${fils}`;
+            if (invoiceKeys.has(key)) { invoiceKeys.delete(key); continue; }
+          }
+          txns.push({date,type:h.type === "restock" ? "Add Stock" : h.type === "return" ? "Return" : "Payment",
+            ref:h.returnNumber || h.soaReference || `${h.type.toUpperCase()}-${String(h.id || "").slice(0,8)}`,
+            desc:h.message || h.type, debit:h.type === "restock" ? fils/1000 : 0,
+            credit:h.type === "restock" ? 0 : fils/1000, order:h.type === "restock" ? 1 : 2});
+        }
+      }
+      txns.sort((a,b) => a.date.localeCompare(b.date) || a.order-b.order);
+      let runningFils=0;
+      const ledger = txns.map(t => ({...t,balance:(runningFils += Math.round(t.debit*1000)-Math.round(t.credit*1000))/1000}));
+      // Fail visibly rather than silently producing the previously incorrect
+      // September closing balance. The authoritative Excel rows sum to 267.262.
+      if (dateLimit === HIBUY_CONFIRMED_THROUGH && runningFils !== 267262) {
+        throw new Error("Hi Buy September SOA mismatch: expected 267.262 KD, got " + (runningFils/1000).toFixed(3));
+      }
+      return ledger;
+    }
+
+    // SOA ledger is independent of live stock, paid and outstanding totals.
+    // Each saved invoice and each active history transaction is counted once.
+    function soaLedger(statement) {
+      if (isHiBuyStatement(statement)) return hiBuyAuthoritativeLedger(statement);
+      const txns = [];
+      (statement.invoices || []).forEach(inv => txns.push({
+        date: inv.invoiceDate || "", type: "Invoice", ref: inv.invoiceNumber || "",
+        desc: (inv.lines || []).map(l => l.productName).filter(Boolean).join(", ") || "Invoice",
+        debit: Number(inv.total || 0), credit: 0, order: 1
+      }));
+      (state.history || []).filter(h => !h.undone &&
+        (h.retailerId ? h.retailerId === statement.retailerId : h.retailerName === statement.retailerName) &&
+        (h.type === "payment" || h.type === "return" || (h.type === "restock" && h.soaOnly)) &&
+        (h.effectiveDate || String(h.at || "").slice(0,10)) <= statement.statementDate
+      ).forEach(h => {
+        const date = h.effectiveDate || String(h.at || "").slice(0,10);
+        const ref = h.returnNumber || h.soaReference || `${h.type.toUpperCase()}-${String(h.id || "").slice(0,8)}`;
+        const amount = h.type === "return"
+          ? Number((historyQuantity(h) * Number(h.details?.unitPrice || 0)).toFixed(3)) || historyNumericAmount(h)
+          : h.type === "payment" ? Number(h.details?.settledAmount || historyNumericAmount(h)) : historyNumericAmount(h);
+        txns.push({date, type: h.type === "restock" ? "Add Stock" : h.type === "return" ? "Return" : "Payment",
+          ref, desc: h.message || h.type, debit: h.type === "restock" ? amount : 0,
+          credit: h.type === "restock" ? 0 : amount, order: h.type === "restock" ? 1 : 2});
+      });
+      // Canteen: retailer-confirmed one-time opening-balance reconciliation.
+      // Anchor the historical SOA at the confirmed 13 Oct 2026 balance without
+      // inventing a payment, return, delivery or sale. Later transactions remain additive.
+      // The adjustment is a display-only ledger row, never written to state/history.
+      if (statement.retailerId === "bab4c5a9-3faf-4cd1-b17c-1a155a293825" &&
+          statement.statementDate >= "2026-10-13") {
+        const cutoff = "2026-10-13";
+        const confirmed = 179.677;
+        const prior = txns.reduce((sum, t) => t.date <= cutoff ? sum + t.debit - t.credit : sum, 0);
+        const adjustment = Number((confirmed - prior).toFixed(3));
+        if (Math.abs(adjustment) >= 0.0005) txns.push({
+          date: cutoff, type: "Reconciliation", ref: "ADJ-CANTEEN-20261013",
+          desc: "Retailer-confirmed balance correction (not payment or sale)",
+          debit: adjustment > 0 ? adjustment : 0,
+          credit: adjustment < 0 ? -adjustment : 0, order: 9
+        });
+      }
+      txns.sort((a,b) => String(a.date).localeCompare(String(b.date)) || a.order - b.order);
+      let running = 0;
+      return txns.map(t => ({...t, balance: Number((running = Number((running + t.debit - t.credit).toFixed(3))).toFixed(3))}));
+    }
+
+    function downloadStatementPdf(statement) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      addPudDocumentHeader(doc, "STATEMENT OF ACCOUNT");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(14, 35, 44);
+      doc.text("Account Name", 14, 66);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(String(statement.retailerName || ""), 14, 75);
+      doc.text("Kuwait", 14, 83);
+
+      const invoices = statement.invoices || [];
+      const fromDate = invoices.length ? invoices.map(i => i.invoiceDate).filter(Boolean).sort()[0] : "";
+      drawInfoBox(doc, 119, 60, [
+        ["Account No.", statement.retailerName || ""],
+        ["Statement Date", statement.statementDate || ""],
+        ["Period", `${fromDate || "—"} - ${statement.statementDate || "—"}`]
+      ], 36, 41);
+
+      const txns = soaLedger(statement);
+      const running = txns.length ? txns[txns.length - 1].balance : 0;
+      const rows = txns.map(t => [t.date,t.type,t.ref,t.desc,
+        t.debit ? t.debit.toFixed(3) : "",t.credit ? t.credit.toFixed(3) : "",t.balance.toFixed(3)]);
+
+      doc.autoTable({
+        startY: 103,
+        margin: { left: 12, right: 12 },
+        theme: "grid",
+        tableWidth: 186,
+        head: [["Date", "Type", "Ref. No.", "Description", "Debit (KD)", "Credit (KD)", "Balance (KD)"]],
+        body: rows.length ? rows : [["", "", "", "No transactions", "", "", "0.000"]],
+        foot: [["", "", "", "SOA CLOSING BALANCE", "", "", running.toFixed(3)]],
+        showFoot: "lastPage",
+        footStyles: { fillColor: [224, 246, 248], textColor: [12,31,38], fontStyle: "bold", fontSize: 8.5 },
+        styles: { fontSize: 7.2, cellPadding: 2.4, lineColor: [207, 218, 222], lineWidth: 0.25, textColor: [18,34,41] },
+        headStyles: { fillColor: [105, 211, 220], textColor: [12,31,38], fontStyle: "bold", halign: "center" },
+        columnStyles: {
+          0: { cellWidth: 22 },
+          1: { cellWidth: 19 },
+          2: { cellWidth: 24 },
+          3: { cellWidth: 48 },
+          4: { cellWidth: 24, halign: "right" },
+          5: { cellWidth: 24, halign: "right" },
+          6: { cellWidth: 25, halign: "right" }
+        }
+      });
+
+      // Keep the reconciliation block on the final page, never outside the page.
+      // The live outstanding figure is independent of historical SOA-only entries.
+      const liveRetailer = getRetailer(statement.retailerId);
+      const liveOutstanding = liveRetailer
+        ? retailerTotals(liveRetailer).unpaid
+        : Number(statement.outstanding || 0);
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const boxHeight = 29;
+      // Dedicated final summary page: never rely on an overflowing table coordinate.
+      doc.addPage();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.setTextColor(14, 35, 44);
+      doc.text("ACCOUNT BALANCE SUMMARY", 14, 27);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(String(statement.retailerName || ""), 14, 37);
+      doc.text(`Statement date: ${statement.statementDate || ""}`, 14, 44);
+      let balanceY = 56;
+      doc.setFillColor(239, 250, 251);
+      doc.setDrawColor(184, 224, 228);
+      doc.roundedRect(12, balanceY, 186, boxHeight, 2, 2, "FD");
+      doc.setTextColor(14, 35, 44);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("SOA Closing Balance (KD)", 17, balanceY + 10);
+      doc.text(running.toFixed(3), 191, balanceY + 10, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text("Current Outstanding Balance (KD)", 17, balanceY + 21);
+      doc.text(Number(liveOutstanding).toFixed(3), 191, balanceY + 21, { align: "right" });
+      doc.setTextColor(0, 0, 0);
+
+      // A compact footer below the balances on the final page only.
+      const footerY = balanceY + boxHeight + 9;
+      if (footerY + 12 <= pageHeight - 7) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(95, 118, 128);
+        doc.text("Thank you for your continued support.", 14, footerY);
+        doc.setFont("helvetica", "bold");
+        doc.text("PUD", 14, footerY + 7);
+        doc.setTextColor(0, 0, 0);
+      }
+      doc.save(`SOA-${safeFilePart(statement.retailerName)}-${statement.statementDate}.pdf`);
+    }
+
+    function downloadStatementExcel(statement) {
+      const workbook = XLSX.utils.book_new();
+
+      const invoiceRows = [];
+      statement.invoices.forEach(invoice => {
+        invoice.lines.forEach(line => {
+          invoiceRows.push({
+            "Invoice Number": invoice.invoiceNumber,
+            "Invoice Date": invoice.invoiceDate,
+            "Due Date": invoice.dueDate || "",
+            "Product": line.productName,
+            "Quantity": Number(line.quantity) || 0,
+            "Unit Price (KD)": Number(line.unitPrice) || 0,
+            "Amount (KD)": Number(line.total) || 0
+          });
+        });
+      });
+
+      if (!invoiceRows.length) {
+        invoiceRows.push({
+          "Invoice Number": "No invoices",
+          "Invoice Date": "",
+          "Due Date": "",
+          "Product": "",
+          "Quantity": 0,
+          "Unit Price (KD)": 0,
+          "Amount (KD)": 0
+        });
+      }
+
+      const returnCredits = (statement.returns || []).reduce((sum, ret) => sum + Number(ret.amount || 0), 0);
+      const soaTransactions = soaLedger(statement);
+      const soaBalance = soaTransactions.length ? soaTransactions[soaTransactions.length - 1].balance : 0;
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(
+        soaTransactions.map(t => ({Date:t.date,Type:t.type,Reference:t.ref,Description:t.desc,
+          "Debit (KD)":t.debit,"Credit (KD)":t.credit,"SOA Balance (KD)":t.balance}))
+      ), "SOA Ledger");
+      const summaryRows = [
+        { "Account Summary": "Retailer", "Value": statement.retailerName },
+        { "Account Summary": "Statement Date", "Value": statement.statementDate },
+        { "Account Summary": "Saved Invoice Total (KD)", "Value": Number(statement.invoiceTotal) || 0 },
+        { "Account Summary": "Total Payments Recorded (KD)", "Value": Number(statement.totalPaid) || 0 },
+        { "Account Summary": "Returns Credited (KD)", "Value": Number(returnCredits.toFixed(3)) },
+        { "Account Summary": "SOA Calculated Balance (KD)", "Value": soaBalance },
+        { "Account Summary": "Current Tracker Outstanding Balance (KD) — unchanged by backdated entries", "Value": Number(getRetailer(statement.retailerId) ? retailerTotals(getRetailer(statement.retailerId)).unpaid : statement.outstanding) || 0 }
+      ];
+
+      const paymentRows = state.history
+        .filter(h => h.retailerName === statement.retailerName && h.type === "payment" && !h.undone && (!h.effectiveDate || h.effectiveDate <= statement.statementDate))
+        .map(h => ({
+          "Date": h.effectiveDate || new Date(h.at).toLocaleDateString(),
+          "Payment Activity": h.message,
+          "Amount": h.amount || ""
+        }));
+
+      const historicalRows = (state.history || []).filter(h => h.backdated && !h.undone && h.retailerName === statement.retailerName && h.effectiveDate <= statement.statementDate).map(h => ({Date:h.effectiveDate,Type:h.type,Description:h.message,AmountKD:historyNumericAmount(h),Quantity:historyQuantity(h),Reference:h.soaReference || "",SOAOnly:!!h.soaOnly}));
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(historicalRows.length ? historicalRows : [{Date:"No historical adjustments"}]), "Historical Adjustments");
+      const returnRows = (statement.returns || []).map(ret => ({
+        "Date": ret.date, "Reference": ret.reference || `RET-${String(ret.id).slice(0,8)}`,
+        "Product": ret.product, "Quantity Returned": ret.quantity,
+        "Unit Price (KD)": ret.unitPrice, "Credit (KD)": ret.amount,
+        "Description": ret.description
+      }));
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(returnRows.length ? returnRows : [{"Date":"No returns"}]), "Returns");
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(invoiceRows),
+        "Invoices"
+      );
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(summaryRows),
+        "Account Summary"
+      );
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(paymentRows.length ? paymentRows : [{
+          "Date": "",
+          "Payment Activity": "No payment activity",
+          "Amount": ""
+        }]),
+        "Payments"
+      );
+
+      XLSX.writeFile(
+        workbook,
+        `SOA-${safeFilePart(statement.retailerName)}-${statement.statementDate}.xlsx`
+      );
+    }
+
+    document.addEventListener("click", event => {
+      const closeButton = event.target.closest("[data-close-dialog]");
+      if (!closeButton) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const dialog = closeButton.closest("dialog");
+      if (dialog?.open) {
+        dialog.close("cancel");
+      }
+    });
+
+    document.getElementById("invoiceBtn").addEventListener("click", () => {
+      if (!state.retailers.length) return alert("Add a retailer first.");
+      fillRetailerOptions("invoiceRetailer");
+      document.getElementById("invoiceDate").value = todayIso();
+      document.getElementById("invoiceDueDate").value = addDaysIso(30);
+      document.getElementById("invoiceNumber").value = `INV-${Date.now().toString().slice(-6)}`;
+      document.getElementById("invoiceNotes").value = "";
+      renderInvoiceLines();
+      document.getElementById("invoiceDialog").showModal();
+    });
+
+    document.getElementById("invoiceRetailer").addEventListener("change", renderInvoiceLines);
+
+    document.getElementById("invoiceForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const retailer = getRetailer(document.getElementById("invoiceRetailer").value);
+      const lines = [...document.querySelectorAll(".invoice-qty")]
+        .map(input => {
+          const product = getProduct(retailer, input.dataset.productId);
+          const quantity = Math.max(0, Math.floor(Number(input.value) || 0));
+          return product && quantity > 0 ? {
+            productId: product.id,
+            productName: product.name,
+            quantity,
+            unitPrice: Number(product.unitPrice),
+            total: Number((quantity * Number(product.unitPrice)).toFixed(3))
+          } : null;
+        }).filter(Boolean);
+
+      if (!lines.length) return alert("Enter a quantity for at least one product.");
+
+      const invoiceNumber = document.getElementById("invoiceNumber").value.trim();
+      if (!invoiceNumber) return alert("Enter an invoice number.");
+      if (state.documents.invoices.some(invoice => invoice.invoiceNumber.toLowerCase() === invoiceNumber.toLowerCase())) {
+        return alert("That invoice number already exists. Use a unique invoice number.");
+      }
+
+      const invoice = {
+        id: id(),
+        retailerId: retailer.id,
+        retailerName: retailer.name,
+        invoiceNumber,
+        invoiceDate: document.getElementById("invoiceDate").value,
+        dueDate: document.getElementById("invoiceDueDate").value,
+        notes: document.getElementById("invoiceNotes").value.trim(),
+        lines,
+        total: Number(lines.reduce((sum, line) => sum + line.total, 0).toFixed(3)),
+        notes: "",
+        createdAt: new Date().toISOString()
+      };
+
+      state.documents.invoices.unshift(invoice);
+      addHistory("invoice", retailer.name, `Invoice ${invoice.invoiceNumber} generated and saved`, money(invoice.total));
+      await saveState();
+      renderDocumentsList();
+      downloadInvoicePdf(invoice);
+      document.getElementById("invoiceDialog").close();
+      showToast("Invoice saved in retailer documents and downloaded");
+    });
+
+    document.getElementById("soaBtn").addEventListener("click", () => {
+      if (!state.retailers.length) return alert("Add a retailer first.");
+      fillRetailerOptions("soaRetailer");
+      document.getElementById("soaDate").value = todayIso();
+      document.getElementById("soaDialog").showModal();
+    });
+
+    async function generateAndSaveStatement(format) {
+      const retailer = getRetailer(document.getElementById("soaRetailer").value);
+      const statementDate = document.getElementById("soaDate").value;
+
+      if (!retailer) {
+        alert("Please select a retailer.");
+        return;
+      }
+
+      if (!statementDate) {
+        alert("Please select a statement date.");
+        return;
+      }
+
+      const statement = buildStatementRecord(retailer, statementDate);
+      const ledgerForStatement = soaLedger(statement);
+      statement.outstanding = ledgerForStatement.length ? ledgerForStatement[ledgerForStatement.length-1].balance : 0;
+      state.documents.statements.unshift(statement);
+
+      addHistory(
+        "soa",
+        retailer.name,
+        `Statement of account generated with ${statement.invoices.length} invoice(s)`,
+        format.toUpperCase()
+      );
+
+      await saveState();
+
+      if (format === "excel") {
+        downloadStatementExcel(statement);
+      } else {
+        downloadStatementPdf(statement);
+      }
+
+      document.getElementById("soaDialog").close();
+      renderDocumentsList();
+      showToast(`SOA saved and exported as ${format === "excel" ? "Excel" : "PDF"}`);
+    }
+
+    document.getElementById("soaForm").addEventListener("submit", event => {
+      event.preventDefault();
+    });
+
+    document.getElementById("soaPdfBtn").addEventListener("click", () => {
+      generateAndSaveStatement("pdf").catch(console.error);
+    });
+
+    document.getElementById("soaExcelBtn").addEventListener("click", () => {
+      generateAndSaveStatement("excel").catch(console.error);
+    });
+
+    function renderDocumentsList() {
+      const retailerId = document.getElementById("documentsRetailer").value;
+      const retailer = getRetailer(retailerId);
+      const box = document.getElementById("documentsList");
+      if (!retailer) {
+        box.innerHTML = '<div class="empty">No retailer selected.</div>';
+        return;
+      }
+
+      const invoices = state.documents.invoices.filter(d => d.retailerId === retailerId);
+      const statements = state.documents.statements.filter(d => d.retailerId === retailerId);
+      const returns = liveReturnDocuments(retailerId);
+      box.innerHTML = `
+        <h3 style="margin:0 0 10px">📁 ${escapeHtml(retailer.name)}</h3>
+        <h4>Invoices (${invoices.length})</h4>
+        ${invoices.length ? `<table class="report-table"><thead><tr><th>Invoice</th><th>Date</th><th>Quantity</th><th>Total</th><th></th></tr></thead><tbody>${invoices.map(invoice => `<tr><td>${escapeHtml(invoice.invoiceNumber)}</td><td>${escapeHtml(invoice.invoiceDate)}</td><td>${invoice.lines.reduce((s,l)=>s+Number(l.quantity||0),0)}</td><td>${money(invoice.total)}</td><td>
+  <div class="card-actions">
+    <button type="button" class="btn btn-secondary" onclick="redownloadInvoice('${invoice.id}')">Download</button>
+    <button type="button" class="btn btn-secondary" onclick="editSavedInvoice('${invoice.id}')">Edit</button>
+    <button type="button" class="btn btn-danger" onclick="deleteSavedInvoice('${invoice.id}')">Delete</button>
+  </div>
+</td></tr>`).join("")}</tbody></table>` : '<div class="note">No saved invoices for this retailer.</div>'}
+        <h4 style="margin-top:20px">Goods Returns (${returns.length})</h4>
+        ${returns.length ? `<table class="report-table"><thead><tr><th>Return No.</th><th>Date</th><th>Product</th><th>Units</th><th>Credit</th><th>Status</th><th></th></tr></thead><tbody>${returns.map(h => `<tr><td>${escapeHtml(h.returnNumber || h.soaReference || "Legacy return")}</td><td>${escapeHtml(h.effectiveDate || String(h.at || "").slice(0,10))}</td><td>${escapeHtml(h.details?.productName || "")}</td><td>${historyQuantity(h)}</td><td>${money(historyQuantity(h) * Number(h.details?.unitPrice || 0) || historyNumericAmount(h))}</td><td>${h.undone ? "Voided" : "Active"}</td><td><button type="button" class="btn btn-secondary" onclick="downloadReturnDocument('${h.id}')">PDF</button></td></tr>`).join("")}</tbody></table>` : '<div class="note">No recorded live goods returns.</div>'}
+        <h4 style="margin-top:20px">Statements of Account (${statements.length})</h4>
+        ${statements.length ? `<table class="report-table"><thead><tr><th>Statement Date</th><th>Invoices</th><th>Outstanding</th><th></th></tr></thead><tbody>${statements.map(statement => `<tr><td>${escapeHtml(statement.statementDate)}</td><td>${statement.invoices.length}</td><td>${money(statement.outstanding)}</td><td>
+  <div class="card-actions">
+    <button type="button" class="btn btn-secondary" onclick="redownloadStatement('${statement.id}')">PDF</button>
+    <button type="button" class="btn btn-secondary" onclick="redownloadStatementExcel('${statement.id}')">Excel</button>
+    <button type="button" class="btn btn-secondary" onclick="editSavedStatement('${statement.id}')">Edit</button>
+    <button type="button" class="btn btn-danger" onclick="deleteSavedStatement('${statement.id}')">Delete</button>
+  </div>
+</td></tr>`).join("")}</tbody></table>` : '<div class="note">No saved statements for this retailer.</div>'}
+      `;
+    }
+
+    document.getElementById("documentsBtn").addEventListener("click", () => {
+      if (!state.retailers.length) return alert("Add a retailer first.");
+      fillRetailerOptions("documentsRetailer");
+      renderDocumentsList();
+      document.getElementById("documentsDialog").showModal();
+    });
+    document.getElementById("documentsRetailer").addEventListener("change", renderDocumentsList);
+
+    window.redownloadInvoice = function(invoiceId) {
+      const invoice = state.documents.invoices.find(d => d.id === invoiceId);
+      if (invoice) downloadInvoicePdf(invoice);
+    };
+
+    window.redownloadStatement = function(statementId) {
+      const statement = state.documents.statements.find(d => d.id === statementId);
+      if (statement) downloadStatementPdf(statement);
+    };
+
+    window.redownloadStatementExcel = function(statementId) {
+      const statement = state.documents.statements.find(d => d.id === statementId);
+      if (statement) downloadStatementExcel(statement);
+    };
+
+    window.editSavedInvoice = function(invoiceId) {
+      const invoice = state.documents.invoices.find(d => d.id === invoiceId);
+      if (!invoice) return;
+
+      document.getElementById("editInvoiceId").value = invoice.id;
+      document.getElementById("editInvoiceNumber").value = invoice.invoiceNumber || "";
+      document.getElementById("editInvoiceDate").value = invoice.invoiceDate || "";
+      document.getElementById("editInvoiceDueDate").value = invoice.dueDate || "";
+      document.getElementById("editInvoiceNotes").value = invoice.notes || "";
+
+      document.getElementById("editInvoiceLines").innerHTML = (invoice.lines || []).map((line, index) => `
+        <div class="edit-line">
+          <div class="field">
+            <label>Product</label>
+            <input data-edit-line-name="${index}" value="${escapeHtml(line.productName || "")}" required />
+          </div>
+          <div class="field">
+            <label>Quantity</label>
+            <input data-edit-line-qty="${index}" type="number" min="1" step="1" value="${Number(line.quantity) || 1}" required />
+          </div>
+          <div class="field">
+            <label>Unit price</label>
+            <input data-edit-line-price="${index}" type="number" min="0.001" step="0.001" value="${Number(line.unitPrice) || 0}" required />
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("editInvoiceDialog").showModal();
+    };
+
+    document.getElementById("editInvoiceForm").addEventListener("submit", async event => {
+      event.preventDefault();
+
+      const invoiceId = document.getElementById("editInvoiceId").value;
+      const invoice = state.documents.invoices.find(d => d.id === invoiceId);
+      if (!invoice) return;
+
+      const invoiceNumber = document.getElementById("editInvoiceNumber").value.trim();
+      const invoiceDate = document.getElementById("editInvoiceDate").value;
+      const dueDate = document.getElementById("editInvoiceDueDate").value;
+      const notes = document.getElementById("editInvoiceNotes").value.trim();
+
+      if (!invoiceNumber || !invoiceDate) {
+        alert("Invoice number and invoice date are required.");
+        return;
+      }
+
+      if (invoiceNumberExists(invoiceNumber, invoiceId)) {
+        alert("That invoice number already exists.");
+        return;
+      }
+
+      const lines = (invoice.lines || []).map((line, index) => {
+        const productName = document.querySelector(`[data-edit-line-name="${index}"]`).value.trim();
+        const quantity = Math.max(1, Math.floor(Number(
+          document.querySelector(`[data-edit-line-qty="${index}"]`).value
+        )));
+        const unitPrice = Number(
+          document.querySelector(`[data-edit-line-price="${index}"]`).value
+        );
+
+        return {
+          ...line,
+          productName,
+          quantity,
+          unitPrice,
+          total: Number((quantity * unitPrice).toFixed(3))
+        };
+      });
+
+      if (lines.some(line => !line.productName || !(line.unitPrice > 0))) {
+        alert("Please enter valid product, quantity, and price values.");
+        return;
+      }
+
+      invoice.invoiceNumber = invoiceNumber;
+      invoice.invoiceDate = invoiceDate;
+      invoice.dueDate = dueDate;
+      invoice.notes = notes;
+      invoice.lines = lines;
+      invoice.totalQuantity = lines.reduce((sum, line) => sum + line.quantity, 0);
+      invoice.total = Number(lines.reduce((sum, line) => sum + line.total, 0).toFixed(3));
+      invoice.updatedAt = new Date().toISOString();
+
+      // Keep saved SOA invoice snapshots in sync with the edited document.
+      // This changes SOA document figures only: never touch retailer products,
+      // stock, payments, returns, history transactions, or live outstanding.
+      // Match by immutable invoice ID to prevent applying an adjustment twice.
+      for (const statement of state.documents.statements) {
+        if (!Array.isArray(statement.invoices)) continue;
+        let changed = false;
+        statement.invoices = statement.invoices.map(saved => {
+          if (saved.id !== invoice.id) return saved;
+          changed = true;
+          return JSON.parse(JSON.stringify(invoice));
+        });
+        if (changed) {
+          statement.invoiceTotal = Number(statement.invoices.reduce(
+            (sum, item) => sum + Number(item.total || 0), 0
+          ).toFixed(3));
+          statement.updatedAt = new Date().toISOString();
+        }
+      }
+
+      addHistory("invoice-edit", invoice.retailerName, `Invoice ${invoice.invoiceNumber} edited`, money(invoice.total));
+      await saveState();
+      document.getElementById("editInvoiceDialog").close();
+      renderDocumentsList();
+      showToast("Invoice updated");
+    });
+
+    window.editSavedStatement = function(statementId) {
+      const statement = state.documents.statements.find(d => d.id === statementId);
+      if (!statement) return;
+
+      document.getElementById("editStatementId").value = statement.id;
+      document.getElementById("editStatementDate").value = statement.statementDate || "";
+      document.getElementById("editStatementNotes").value = statement.notes || "";
+
+      const retailerInvoices = state.documents.invoices.filter(
+        invoice => invoice.retailerId === statement.retailerId
+      );
+
+      const selectedIds = new Set((statement.invoices || []).map(invoice => invoice.id));
+
+      document.getElementById("editStatementInvoices").innerHTML = `
+        <div class="checkbox-list">
+          ${retailerInvoices.length ? retailerInvoices.map(invoice => `
+            <label class="checkbox-row">
+              <input type="checkbox" data-soa-invoice-id="${invoice.id}" ${selectedIds.has(invoice.id) ? "checked" : ""} />
+              <span>${escapeHtml(invoice.invoiceNumber)} · ${escapeHtml(invoice.invoiceDate)} · ${money(invoice.total)}</span>
+            </label>
+          `).join("") : `<div class="note">No saved invoices for this retailer.</div>`}
+        </div>
+      `;
+
+      document.getElementById("editStatementDialog").showModal();
+    };
+
+    document.getElementById("editStatementForm").addEventListener("submit", async event => {
+      event.preventDefault();
+
+      const statementId = document.getElementById("editStatementId").value;
+      const statement = state.documents.statements.find(d => d.id === statementId);
+      if (!statement) return;
+
+      const statementDate = document.getElementById("editStatementDate").value;
+      const notes = document.getElementById("editStatementNotes").value.trim();
+
+      if (!statementDate) {
+        alert("Statement date is required.");
+        return;
+      }
+
+      const selectedInvoiceIds = Array.from(
+        document.querySelectorAll("[data-soa-invoice-id]:checked")
+      ).map(input => input.dataset.soaInvoiceId);
+
+      const selectedInvoices = state.documents.invoices
+        .filter(invoice => selectedInvoiceIds.includes(invoice.id))
+        .map(invoice => JSON.parse(JSON.stringify(invoice)));
+
+      statement.statementDate = statementDate;
+      statement.notes = notes;
+      statement.invoices = selectedInvoices;
+      statement.invoiceTotal = Number(
+        selectedInvoices.reduce((sum, invoice) => sum + (Number(invoice.total) || 0), 0).toFixed(3)
+      );
+      statement.updatedAt = new Date().toISOString();
+
+      addHistory(
+        "soa-edit",
+        statement.retailerName,
+        `Statement of account edited with ${selectedInvoices.length} invoice(s)`
+      );
+
+      await saveState();
+      document.getElementById("editStatementDialog").close();
+      renderDocumentsList();
+      showToast("Statement of account updated");
+    });
+
+    window.deleteSavedInvoice = function(invoiceId) {
+      const invoice = state.documents.invoices.find(d => d.id === invoiceId);
+      if (!invoice) return;
+
+      const confirmed = confirm(
+        `Delete invoice ${invoice.invoiceNumber}? This removes it from the retailer's saved documents and cannot be undone.`
+      );
+
+      if (!confirmed) return;
+
+      state.documents.invoices = state.documents.invoices.filter(
+        document => document.id !== invoiceId
+      );
+
+      addHistory(
+        "invoice-delete",
+        invoice.retailerName,
+        `Saved invoice ${invoice.invoiceNumber} deleted`,
+        money(invoice.total)
+      );
+
+      saveState();
+      renderDocumentsList();
+      showToast(`Invoice ${invoice.invoiceNumber} deleted`);
+    };
+
+    window.deleteSavedStatement = function(statementId) {
+      const statement = state.documents.statements.find(d => d.id === statementId);
+      if (!statement) return;
+
+      const confirmed = confirm(
+        `Delete the statement of account dated ${statement.statementDate}? This removes it from the retailer's saved documents and cannot be undone.`
+      );
+
+      if (!confirmed) return;
+
+      state.documents.statements = state.documents.statements.filter(
+        document => document.id !== statementId
+      );
+
+      addHistory(
+        "soa-delete",
+        statement.retailerName,
+        `Saved statement of account dated ${statement.statementDate} deleted`
+      );
+
+      saveState();
+      renderDocumentsList();
+      showToast("Statement of account deleted");
+    };
+
+    function unitToBase(value, unit) {
+      const n = Number(value) || 0;
+      if (unit === "kg") return n * 1000;
+      return n;
+    }
+
+    function normalizeMaterialItem(item = {}) {
+      // Backward compatibility: convert old “Total batch cost + quantity purchased”
+      // materials into a simple per-unit price so the cost/bar stays unchanged.
+      if ((item.priceMode || "perUnit") === "batch") {
+        const purchasedBase = unitToBase(Number(item.purchaseQty) || 0, item.purchaseUnit || "kg");
+        if (purchasedBase > 0) {
+          const pricePerGram = (Number(item.price) || 0) / purchasedBase;
+          return {
+            name: item.name || "",
+            price: pricePerGram * 1000,
+            priceUnit: "kg",
+            usage: Number(item.usage) || 0,
+            usageUnit: item.usageUnit || "g"
+          };
+        }
+      }
+      return {
+        name: item.name || "",
+        price: Number(item.price) || 0,
+        priceUnit: item.priceUnit || "kg",
+        usage: Number(item.usage) || 0,
+        usageUnit: item.usageUnit || "g"
+      };
+    }
+
+    function materialCostPerBar(item = {}) {
+      const normalized = normalizeMaterialItem(item);
+      const price = Number(normalized.price) || 0;
+      const usage = Number(normalized.usage) || 0;
+      if (!price || !usage) return 0;
+      const usageBase = unitToBase(usage, normalized.usageUnit || "g");
+      const quotedBase = unitToBase(1, normalized.priceUnit || "kg");
+      if (!quotedBase) return 0;
+      return (price / quotedBase) * usageBase;
+    }
+
+    function expenseRowHtml(item = {}, type = "variable") {
+      if (type === "fixed") return `<div class="expense-row" style="grid-template-columns:1.5fr .8fr auto"><div class="field"><label>Monthly expense</label><input class="expense-name" maxlength="80" value="${escapeHtml(item.name || "")}" placeholder="Employee salary / kitchen rent"></div><div class="field"><label>KD / month</label><input class="expense-amount" type="number" min="0" step="0.001" value="${Number(item.amount)||0}"></div><button type="button" class="btn btn-secondary expense-remove">Remove</button></div>`;
+      const n=normalizeMaterialItem(item), punit=n.priceUnit||"kg", uu=n.usageUnit||"g";
+      return `<div class="expense-row material-row" style="grid-template-columns:1.35fr .9fr .9fr .9fr .9fr auto"><div class="field"><label>Material</label><input class="expense-name" maxlength="80" value="${escapeHtml(n.name || "")}" placeholder="Chocolate"></div><div class="field"><label>Price (KD)</label><input class="expense-price" type="number" min="0" step="0.001" value="${Number(n.price)||0}"></div><div class="field"><label>Price unit</label><select class="expense-price-unit"><option value="kg" ${punit==='kg'?'selected':''}>per kg</option><option value="g" ${punit==='g'?'selected':''}>per g</option><option value="piece" ${punit==='piece'?'selected':''}>per piece</option></select></div><div class="field"><label>Used / bar</label><input class="expense-usage" type="number" min="0" step="0.001" value="${Number(n.usage)||0}"></div><div class="field"><label>Usage unit</label><select class="expense-usage-unit"><option value="g" ${uu==='g'?'selected':''}>g</option><option value="kg" ${uu==='kg'?'selected':''}>kg</option><option value="piece" ${uu==='piece'?'selected':''}>piece</option></select></div><button type="button" class="btn btn-secondary expense-remove">Remove</button></div>`;
+    }
+
+    function materialItemFromRow(row) {
+      return {name:row.querySelector('.expense-name').value.trim(),price:Number(row.querySelector('.expense-price').value)||0,priceUnit:row.querySelector('.expense-price-unit').value,usage:Number(row.querySelector('.expense-usage').value)||0,usageUnit:row.querySelector('.expense-usage-unit').value};
+    }
+
+    function updateUnitCostPreview() {
+      const rows=[...document.querySelectorAll('#variableExpenseRows .material-row')]; let total=0;
+      const parts=rows.map(row=>{ const item=materialItemFromRow(row); const cost=materialCostPerBar(item); total+=cost; return item.name ? `${escapeHtml(item.name)}: ${money(cost)}/bar` : ''; }).filter(Boolean);
+      const el=document.getElementById('unitCostPreview'); if(el) el.innerHTML=`<strong>Calculated production cost: ${money(total)} per bar</strong>${parts.length?'<br>'+parts.join(' • '):''}`;
+    }
+
+    function renderExpenseEditor() {
+      const exp = state.expenses || {variable:[],fixed:[],healthyMargin:30,moderateMargin:15};
+      if (Number(exp.schemaVersion||0) < 5) {
+        exp.variable = (exp.variable || []).map(normalizeMaterialItem);
+        exp.schemaVersion = 5; state.expenses = exp;
+      }
+      document.getElementById("variableExpenseRows").innerHTML = (exp.variable || []).map(e=>expenseRowHtml(e,"variable")).join("") || expenseRowHtml({},"variable");
+      updateUnitCostPreview();
+    }
+
+    function addExpenseEditorRow(containerId, type) { document.getElementById(containerId).insertAdjacentHTML("beforeend", expenseRowHtml({},type)); updateUnitCostPreview(); }
+    document.getElementById("expensesBtn").addEventListener("click",()=>{renderExpenseEditor();document.getElementById("expensesDialog").showModal();});
+    document.getElementById("addVariableExpenseBtn").addEventListener("click",()=>addExpenseEditorRow("variableExpenseRows","variable"));
+    document.getElementById("expensesDialog").addEventListener("input",updateUnitCostPreview); document.getElementById("expensesDialog").addEventListener("change",updateUnitCostPreview);
+    document.getElementById("expensesDialog").addEventListener("click",e=>{if(e.target.classList.contains("expense-remove")){ e.target.closest(".expense-row")?.remove(); updateUnitCostPreview(); }});
+    document.getElementById("expensesForm").addEventListener("submit",e=>{
+      e.preventDefault();
+      const variable=[...document.querySelectorAll('#variableExpenseRows .material-row')].map(materialItemFromRow).filter(x=>x.name||x.price||x.usage);
+      state.expenses={...(state.expenses||{}),variable,schemaVersion:5}; document.getElementById("expensesDialog").close(); saveState(); showToast("Production materials saved — cost per bar updated");
+    });
+
+    function localMonthKeyFromDate(value) {
+      if (/^\d{4}-\d{2}/.test(String(value || ""))) return String(value).slice(0,7);
+      const d = new Date(value || "");
+      if (Number.isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    }
+
+    function reportHistoryMonth(h) {
+      if (/^\d{4}-\d{2}$/.test(String(h?.localMonth || ""))) return h.localMonth;
+      return localMonthKeyFromDate(h?.at);
+    }
+
+    function monthlyReportData(month) {
+      const history = (state.history || []).filter(h => reportHistoryMonth(h) === month);
+      const payments = history.filter(h => h.type === "payment" && !h.soaOnly && !h.analyticsUndone);
+      const sales = payments.reduce((sum,h)=>sum+historyNumericAmount(h),0);
+      const unitsSold = payments.reduce((sum,h)=>sum+historyQuantity(h),0);
+      const expenses = (state.cashExpenses || []).filter(e => localMonthKeyFromDate(e.date) === month).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+      const totalExpenses = expenses.reduce((sum,e)=>sum+(Number(e.amount)||0),0);
+      const netCash = sales-totalExpenses;
+      return {history,payments,sales,unitsSold,expenses,totalExpenses,netCash};
+    }
+
+    function renderReportPreview() {
+      const monthEl=document.getElementById("reportMonth");
+      if(!monthEl.value) monthEl.value=localMonthKeyFromDate(todayIso());
+      const month=monthEl.value, d=monthlyReportData(month);
+      const label = new Date(`${month}-01T12:00:00`).toLocaleDateString(undefined,{month:'long',year:'numeric'});
+      document.getElementById("reportPreview").innerHTML = `
+        <h3 style="margin-top:0">${escapeHtml(label)}</h3>
+        <div class="summary-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">
+          <div class="summary-card"><div class="label">Monthly Sales Collected</div><div class="value">${money(d.sales)}</div></div>
+          <div class="summary-card"><div class="label">Units Sold</div><div class="value">${d.unitsSold}</div></div>
+          <div class="summary-card"><div class="label">Actual Expenses</div><div class="value">${money(d.totalExpenses)}</div></div>
+          <div class="summary-card"><div class="label">Cash Result</div><div class="value">${money(d.netCash)}</div></div>
+        </div>
+        <h3>Expenses paid in this month</h3>
+        ${d.expenses.length ? `<table class="report-table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead><tbody>${d.expenses.map(e=>`<tr><td>${escapeHtml(e.date)}</td><td>${escapeHtml(e.category||'Other')}</td><td>${escapeHtml(e.description||'')}</td><td>${money(e.amount)}</td><td><button type="button" class="btn btn-secondary report-expense-delete" data-id="${escapeHtml(e.id)}">Delete</button></td></tr>`).join('')}</tbody><tfoot><tr><th colspan="3">Total actual expenses</th><th>${money(d.totalExpenses)}</th><th></th></tr></tfoot></table>` : `<div class="empty">No actual expenses recorded for this month yet.</div>`}
+        <div class="analytics-note" style="margin-top:14px">Cash Result = payments/sales collected during the selected month − actual expenses dated in that month. Buying inventory is counted when you record the purchase expense; it is not estimated from cost per bar.</div>`;
+    }
+
+    document.getElementById("reportBtn").addEventListener("click", () => {
+      document.getElementById("reportMonth").value=localMonthKeyFromDate(todayIso());
+      document.getElementById("cashExpenseDate").value=todayIso();
+      renderReportPreview();
+      document.getElementById("reportDialog").showModal();
+    });
+    document.getElementById("refreshReportBtn").addEventListener("click",renderReportPreview);
+    document.getElementById("reportMonth").addEventListener("change",renderReportPreview);
+    document.getElementById("addCashExpenseBtn").addEventListener("click",()=>{
+      const date=document.getElementById("cashExpenseDate").value;
+      const category=document.getElementById("cashExpenseCategory").value;
+      const description=document.getElementById("cashExpenseDescription").value.trim();
+      const amount=Number(document.getElementById("cashExpenseAmount").value);
+      if(!date || !(amount>0)){showToast("Enter an expense date and amount");return;}
+      state.cashExpenses=Array.isArray(state.cashExpenses)?state.cashExpenses:[];
+      state.cashExpenses.push({id:id(),date,category,description,amount:Number(amount.toFixed(3)),createdAt:new Date().toISOString()});
+      document.getElementById("cashExpenseAmount").value="";
+      document.getElementById("cashExpenseDescription").value="";
+      document.getElementById("reportMonth").value=date.slice(0,7);
+      saveState(); renderReportPreview(); showToast("Expense recorded");
+    });
+    document.getElementById("reportPreview").addEventListener("click",e=>{
+      const b=e.target.closest(".report-expense-delete"); if(!b)return;
+      state.cashExpenses=(state.cashExpenses||[]).filter(x=>x.id!==b.dataset.id);
+      saveState(); renderReportPreview(); showToast("Expense deleted");
+    });
+
+    document.getElementById("excelExportBtn").addEventListener("click", event => {
+      event.preventDefault();
+      const month=document.getElementById("reportMonth").value || localMonthKeyFromDate(todayIso());
+      const d=monthlyReportData(month), workbook=XLSX.utils.book_new();
+      const summary=[{"Month":month,"Sales Collected KD":d.sales,"Units Sold":d.unitsSold,"Actual Expenses KD":d.totalExpenses,"Cash Result KD":d.netCash}];
+      const expenses=d.expenses.map(e=>({Date:e.date,Category:e.category,Description:e.description||"","Amount KD":Number(e.amount)||0}));
+      const sales=d.payments.map(h=>({Date:new Date(h.at).toLocaleString(),Retailer:h.retailerName||"",Units:historyQuantity(h),"Payment KD":historyNumericAmount(h)}));
+      XLSX.utils.book_append_sheet(workbook,XLSX.utils.json_to_sheet(summary),"Monthly Summary");
+      XLSX.utils.book_append_sheet(workbook,XLSX.utils.json_to_sheet(expenses),"Expenses");
+      XLSX.utils.book_append_sheet(workbook,XLSX.utils.json_to_sheet(sales),"Sales Payments");
+      XLSX.writeFile(workbook,`Pud-Monthly-Report-${month}.xlsx`); showToast("Monthly Excel report downloaded");
+    });
+
+    function checkBackupReminder() {
+      const lastBackup = localStorage.getItem("pud-last-backup-at");
+      if (!lastBackup) {
+        showToast("Backup reminder: export a backup today");
+        return;
+      }
+
+      const daysSinceBackup =
+        (Date.now() - new Date(lastBackup).getTime()) / 86400000;
+
+      if (daysSinceBackup >= 1) {
+        showToast("Backup reminder: your last backup is over 24 hours old");
+      }
+    }
+
+    async function initializeApp() {
+      const { data, error } = await supabaseClient.auth.getSession();
+
+      if (error || !data.session?.user) {
+        showLoginScreen();
+        return;
+      }
+
+      await showSignedInApp(data.session.user);
+    }
+
+    initializeApp().catch(error => {
+      console.error("App initialization failed:", error);
+      showLoginScreen();
+      els.authError.textContent =
+        "The app could not start. Please refresh and try again.";
+    });
+  
+</script>
+
+<script>
+(function(){
+  const app=document.getElementById('mainApp');
+  const toggle=document.getElementById('sideNavToggle');
+  toggle?.addEventListener('click',()=>{
+    if(window.innerWidth<=850) app.classList.toggle('nav-open');
+    else app.classList.toggle('nav-collapsed');
+  });
+
+  document.querySelectorAll('.nav-item').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('.app-page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(btn.dataset.page)?.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(window.innerWidth<=850) app.classList.remove('nav-open');
+  }));
+  const actionMap={addRetailer:'addRetailerBtn',addProduct:'addProductBtn',invoice:'invoiceBtn',soa:'soaBtn',documents:'documentsBtn',expenses:'expensesBtn'};
+  document.querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>{
+    document.getElementById(actionMap[btn.dataset.action])?.click();
+    if(window.innerWidth<=850) app.classList.remove('nav-open');
+  }));
+})();
+</script>
+</body>
+</html>
